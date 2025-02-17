@@ -85,13 +85,12 @@ RUN mkdir -p ${WORKDIR_PATH} && \
     chown -R ${USER_ID}:${GROUP_ID} ${WORKDIR_PATH} && \
     chown -R ${USER_ID}:${GROUP_ID} /package
 
-USER ${NAME}
-WORKDIR ${WORKDIR_PATH}
+
 
 # ------------------------------- requirements ------------------------------ #
 
 RUN python3 -m pip install --no-cache-dir --upgrade pip
-RUN python3 -m pip install --no-cache-dir -r /package/requirements.txt
+RUN python3 -m pip install --no-cache-dir --break-system-packages -r /package/requirements.txt       
 
-# # Install the package itself (if applicable, otherwise remove this line)
-# RUN python3 -m pip install --no-cache-dir ${WORKDIR_PATH}
+USER ${NAME}
+WORKDIR ${WORKDIR_PATH}
