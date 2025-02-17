@@ -1,15 +1,15 @@
 {
-    "name": "${localWorkspaceFolder}",
-    "image": "${localWorkspaceFolder}:latest",
-    "workspaceFolder": "/workspace",
-    "mounts": [
-      "source=${localWorkspaceFolder},target=/workspace,type=bind"
-    ],
-    "extensions": [
-      "ms-python.python",
-      "ms-python.vscode-pylance",
-      "ms-python.black-formatter",
-      "github.vscode-github-actions",
-      "njpwerner.autodocstring"
-    ]
-  }
+  "name": "${localWorkspaceFolder}",
+  "image": "${localWorkspaceFolder}:latest",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind"
+  ],
+  "extensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.black-formatter",
+    "github.vscode-github-actions",
+    "njpwerner.autodocstring"
+  ]
+}
