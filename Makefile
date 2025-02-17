@@ -57,4 +57,10 @@ test-full: ## Run all tests
 	pytest
 
 train: ## Train the model
-	python src/train.py
+	docker run --runtime=nvidia --gpus all \
+		--rm -it \
+	    -v "$(shell pwd)":/workspace \
+	    -w /workspace \
+	    train-transformer:latest \
+	    scripts/train.sh $(ARGS)
+	
