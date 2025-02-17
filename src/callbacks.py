@@ -6,8 +6,7 @@ from transformers.training_args import TrainingArguments
 
 
 class NtfyCallback(TrainerCallback):
-    """
-    A callback class for sending notifications at the start and end of training.
+    """A callback class for sending notifications at the start and end of training.
 
     Args:
         topic (str): The Ntfy.sh topic to notify

@@ -90,7 +90,7 @@ RUN mkdir -p ${WORKDIR_PATH} && \
 # ------------------------------- requirements ------------------------------ #
 
 RUN python3 -m pip install --no-cache-dir --upgrade pip
-RUN python3 -m pip install --no-cache-dir --break-system-packages -r /package/requirements.txt       
+RUN python3 -m pip install --no-cache-dir --break-system-packages -r /package/requirements.txt
 
 USER ${NAME}
 WORKDIR ${WORKDIR_PATH}

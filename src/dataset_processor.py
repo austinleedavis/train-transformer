@@ -1,10 +1,10 @@
 from typing import Iterable, Mapping
+
 from datasets import Dataset
 
 
 class DatasetProcessor:
-    """
-    A class for applying a series of transformations to a Hugging Face `datasets.Dataset` object.
+    """A class for applying a series of transformations to a Hugging Face `datasets.Dataset` object.
 
     Supported transformation types:
     - "select": Select specific indices from the dataset.
@@ -37,8 +37,7 @@ class DatasetProcessor:
     transforms: Iterable[Mapping]
 
     def __init__(self, transforms: Iterable[Mapping]):
-        """
-        Initialize the DatasetProcessor with a list of transformation configurations.
+        """Initialize the DatasetProcessor with a list of transformation configurations.
 
         Args:
             transforms (Iterable[Mapping]): A list of dictionaries where each dictionary
@@ -77,8 +76,7 @@ class DatasetProcessor:
         self.transforms = transforms
 
     def process(self, dataset: Dataset):
-        """
-        Apply the stored transformations to a given dataset.
+        """Apply the stored transformations to a given dataset.
 
         Args:
             dataset (Dataset): The Hugging Face dataset to be transformed.

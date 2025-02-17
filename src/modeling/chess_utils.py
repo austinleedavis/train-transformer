@@ -24,8 +24,8 @@ UCI_TOKEN_PATTERN = re.compile(r"[a-h]\d|[QBRN]")
 def get_board_position_change_indices(
     token_offsets: list[tuple[int, int]], n_pos: int
 ) -> list[int]:
-    """
-    Finds the token indices where a tokenized UCI transcript resolves into different board positions.
+    """Finds the token indices where a tokenized UCI transcript resolves into different board
+    positions.
 
     This function determines the points at which the board state changes between moves in a
     sequence of UCI (Universal Chess Interface) moves. It uses the offsets from a UciTileTokenizer
@@ -46,8 +46,7 @@ def get_board_position_change_indices(
 
 
 def get_token_phases(transcript_token_ids: list[int]) -> list[int]:
-    """
-    Generates a list of phases corresponding to the given transcript token IDs.
+    """Generates a list of phases corresponding to the given transcript token IDs.
 
     Args:
         transcript_token_ids (list[int]): A list of token IDs representing a chess game transcript.
@@ -127,10 +126,8 @@ def uci_to_board(
 
 
 def pgn_to_uci(pgn_string: str):
-    """
-    Converts a pgn string into uci notation.
-    Example usage:
-    ```
+    """Converts a pgn string into uci notation. Example usage: ```
+
     >>> pgn_to_uci('1.e4 e5 2.Nf3 Nc6 3.Bb5')
     'e2e4 e7e5 g1f3 b8c6 f1b5'
     ```
@@ -157,10 +154,8 @@ def uci_to_pgn(
         Result="*",
     ),
 ):
-    """
-    Converts a uci string into pgn.
-    Example usage (**using print**):
-    ```
+    """Converts a uci string into pgn. Example usage (**using print**): ```
+
     >>> print(uci_to_pgn('e2e4 e7e5 g1f3 b8c6 f1b5'))
     [Event "?"]
     [Site "?"]
@@ -186,8 +181,7 @@ def uci_to_pgn(
 
 
 def win2cp(win_percent):
-    """
-    Convert a win percentage to centipawn evaluation.
+    """Convert a win percentage to centipawn evaluation.
 
     Parameters:
     win_percent (float): The win percentage, a value between 0 and 1.
@@ -207,8 +201,7 @@ def win2cp(win_percent):
 
 
 def cp2win(centipawns):
-    """
-    Convert centipawn evaluation to win percentage.
+    """Convert centipawn evaluation to win percentage.
 
     Parameters:
     centipawns (float): The evaluation in centipawns.
@@ -223,8 +216,8 @@ def cp2win(centipawns):
 
 
 def accuracy(win_percent_before, win_percent_after):
-    """
-    Computes the accuracy of a move as a function of the win percentage before and after the move.
+    """Computes the accuracy of a move as a function of the win percentage before and after the
+    move.
 
     Parameters:
     win_percent_before (float): The win percentage before the move.

@@ -12,7 +12,9 @@ from transformers import (
     PreTrainedTokenizerFast,
 )
 from transformers import Trainer as HfTrainer
-from transformers import TrainingArguments
+from transformers import (
+    TrainingArguments,
+)
 
 import wandb
 from callbacks import NtfyCallback
@@ -31,7 +33,6 @@ _HYDRA_PARAMS = {
     "config_path": str(root / "configs"),
     "config_name": "train.yaml",
 }
-import torch
 
 
 class Trainer:

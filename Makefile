@@ -63,4 +63,3 @@ train: ## Train the model
 	    -w /workspace \
 	    train-transformer:latest \
 	    scripts/train.sh $(ARGS)
-	
