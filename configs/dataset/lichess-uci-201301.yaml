@@ -1,9 +1,13 @@
+is_upper: true
+save_to: data/lichess-uci-203101
+
 load_dataset:
   _target_: datasets.load_dataset
   path: austindavis/lichess-uci
-  name: "201301"
   split: train
-is_upper: true
+  cache_dir: data/cache
+  data_files: data/203101/train-*
+  num_proc: 4
 transforms:
   - type: filter
     callable: "lambda w,b: w>1500 and b>1500"
@@ -15,7 +19,7 @@ transforms:
     callable: "lambda t: {'transcript_len': len(t)}"
     kwargs:
       desc: "Compute transcript len"
-      input_columns: ["Transcript"]
+      input_columns: Transcript
       num_proc: 4
   - type: filter
     callable: "lambda t: t >10 and t %5 != 4"

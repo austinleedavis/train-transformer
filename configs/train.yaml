@@ -1,5 +1,5 @@
 defaults:
-  - dataset: lichess-uci-201301
+  - dataset: lichess-uci-202302
   - llm: chessGPT_d12
 
 hydra:
@@ -9,7 +9,7 @@ hydra:
 
 run:
   debug: false
-  report_to: none #wandb
+  report_to: wandb
   name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
   model_dir: models/${run.name}
   data_dir: data
@@ -24,6 +24,7 @@ hf_trainer_args: ## arguments given to Hf Trainer
   run_name: ${run.name}
   output_dir: ${run.model_dir}
   num_train_epochs: 1.0
+  learning_rate: 5.0e-05
   bf16: true
 
   ####################
