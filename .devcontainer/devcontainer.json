@@ -1,6 +1,6 @@
 {
-  "name": "${localWorkspaceFolder}",
-  "image": "${localWorkspaceFolder}:latest",
+  "name": "train-transformer",
+  "image": "train-transformer:latest",
   "workspaceFolder": "/workspace",
   "mounts": [
     "source=${localWorkspaceFolder},target=/workspace,type=bind"
