@@ -94,3 +94,8 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages -r /package/re
 
 USER ${NAME}
 WORKDIR ${WORKDIR_PATH}
+
+# ------------------------------- configure pre-commit ------------------------------ #
+RUN git init
+RUN git config --global --add safe.directory /workspace
+RUN pre-commit install
