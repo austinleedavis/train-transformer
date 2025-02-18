@@ -1,5 +1,5 @@
 defaults:
-  - dataset/load_dataset: lichess-uci-201302
+  - dataset/load_dataset: lichess-uci-201301
   - dataset/transforms: only-promotions
   - llm: chessGPT_d12
 
