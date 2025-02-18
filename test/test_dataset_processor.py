@@ -1,6 +1,6 @@
 import hydra
-from omegaconf import DictConfig
 import pyrootutils
+from omegaconf import DictConfig
 
 from dataset_processor import DatasetProcessor
 

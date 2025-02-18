@@ -4,6 +4,7 @@ import datasets
 import hydra
 import pyrootutils
 import torch
+import wandb
 from dotenv import load_dotenv
 from omegaconf import DictConfig, OmegaConf
 from transformers import (
@@ -16,7 +17,6 @@ from transformers import (
     TrainingArguments,
 )
 
-import wandb
 from callbacks import NtfyCallback
 from dataset_processor import DatasetProcessor
 
