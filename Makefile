@@ -50,6 +50,7 @@ train: ## Train the model
 		--rm -it \
 	    -v "$(shell pwd)":/workspace \
 	    -w /workspace \
+		--shm-size=8G \
 	    $(IMAGE_BASE):latest \
 	    scripts/train.sh $(ARGS)
 
