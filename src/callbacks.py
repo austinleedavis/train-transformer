@@ -1,4 +1,5 @@
 import http.client
+import logging
 
 from transformers import TrainerCallback
 from transformers.trainer_callback import TrainerControl, TrainerState
@@ -12,10 +13,14 @@ class NtfyCallback(TrainerCallback):
         topic (str): The Ntfy.sh topic to notify
     """
 
+    logger = logging.getLogger(__name__)
     topic: str
 
-    def __init__(self, topic: str):
+    def __init__(self, topic: str = None):
         self.topic = topic
+        if topic is None:
+            self.logger.warning("No topic specified. Ntfy will use Logger instead.")
+            self.send_notification = lambda *a, **k: self.logger.info(str((a, k)))
 
     def on_train_begin(self, args, state, control, **kwargs):
         self.send_notification(f"Training Began: {args.output_dir}")
@@ -40,10 +45,10 @@ class NtfyCallback(TrainerCallback):
             conn.request("POST", self.topic, message, headers)
             response = conn.getresponse()
             if response.status == 200:
-                print("Notification sent successfully!")
+                self.logger.info(f"Notification sent successfully: {message}")
             else:
-                print(
-                    f"Failed to send notification. Status code: {response.status}, Reason: {response.reason}"
+                self.logger.info(
+                    f"Failed to send notification. Status code: {response.status}, Reason: {response.reason}, Message: {message}"
                 )
         except Exception as e:
             print(f"An error occurred: {e}")
