@@ -66,8 +66,8 @@ RUN pip3 --version
 RUN mkdir -p /package
 COPY requirements.txt /package/requirements.txt
 
-ARG USER_ID
-ARG GROUP_ID
+ARG USER_ID=1000
+ARG GROUP_ID=1000
 ARG NAME
 
 # Create user and group only if they don’t exist
