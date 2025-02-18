@@ -1,24 +1,30 @@
 defaults:
   - dataset: lichess-uci-201301
-  - llm: gpt2-untrained
+  - llm: chessGPT_d12
+
+hydra:
+  job_logging:
+    root:
+      level: INFO
 
 run:
   debug: false
-  report_to: wandb # none
+  report_to: none #wandb
   name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
   model_dir: models/${run.name}
   data_dir: data
+  force_dtype: bfloat16
 
-training: ## arguments given to Hf Trainer
+hf_trainer_args: ## arguments given to Hf Trainer
   _target_: transformers.TrainingArguments
   report_to: ${run.report_to}
   auto_find_batch_size: true
-  bf16: true
   save_total_limit: 1
   torch_compile: false
   run_name: ${run.name}
   output_dir: ${run.model_dir}
   num_train_epochs: 1.0
+  bf16: true
 
   ####################
   # Default values for transformers.TrainingArguments

@@ -1,8 +1,10 @@
+import logging
 import os
 
 import datasets
 import hydra
 import pyrootutils
+import torch
 import wandb
 from dotenv import load_dotenv
 from omegaconf import DictConfig
@@ -33,6 +35,8 @@ _HYDRA_PARAMS = {
     "config_name": "train.yaml",
 }
 
+log = logging.getLogger(__name__)
+
 
 @hydra.main(**_HYDRA_PARAMS)
 def main(cfg: DictConfig) -> None:
@@ -51,8 +55,7 @@ class Trainer:
 
     def __init__(self, config: DictConfig):
         self.config: DictConfig = config
-        self.ntfy = NtfyCallback(topic=os.environ["NTFY_TOPIC"])
-
+        self.ntfy = NtfyCallback(topic=os.environ.get("NTFY_TOPIC", None))
         self.llm = self._init_llm()
         self.tokenizer = hydra.utils.instantiate(config.llm.tokenizer.instance)
         self.tokenizer.model_max_length = self.llm.config.n_ctx
@@ -61,7 +64,7 @@ class Trainer:
         self.dataset = DatasetLoader(self.config, self.tokenizer).load()
 
         # setup Hf Trainer
-        self.hf_trainer_args = hydra.utils.instantiate(config.training)
+        self.hf_trainer_args = hydra.utils.instantiate(config.hf_trainer_args)
         collator = DataCollatorForLanguageModeling(self.tokenizer, mlm=False)
         self.hf_trainer = HfTrainer(
             self.llm,
@@ -74,7 +77,7 @@ class Trainer:
         )
 
     def train(self):
-        print("Train!")
+        log.info("Train!")
         try:
             self.hf_trainer.train()
         finally:
@@ -83,14 +86,27 @@ class Trainer:
                 wandb.run.finish(exit_code=-1)
 
     def _init_llm(self):
-        cfg = self.config.llm
         llm = (
-            hydra.utils.call(cfg.from_pretrained)
-            if "from_pretrained" in cfg
-            else hydra.utils.instantiate(cfg.instance)
+            hydra.utils.call(self.config.llm.from_pretrained)
+            if "from_pretrained" in self.config.llm
+            else hydra.utils.instantiate(self.config.llm.instance)
         )
+        dtype_mapping = {
+            "float32": torch.float32,
+            "float": torch.float,  # Alias for float32
+            "float16": torch.float16,
+            "half": torch.half,  # Alias for float16
+            "bfloat16": torch.bfloat16,
+        }
+        llm_dtype = llm.config.torch_dtype
+        train_dtype = self.config.run.get("force_dtype", llm_dtype)
+
         # oddly, the LLM in not loaded to the correct dtype automatically
-        llm.to(llm.config.torch_dtype)
+        llm.to(dtype_mapping[train_dtype])
+
+        log.info(llm)
+        log.info(f"LLM dtype set to {train_dtype}.")
+
         return llm
 
 
@@ -110,11 +126,13 @@ class DatasetLoader:
 
     def load(self) -> datasets.Dataset:
         if os.path.exists(self.cache_path):
-            print("Loading dataset from cache...")
+            log.info("Loading dataset from cache...")
             self.dataset = datasets.load_from_disk(self.cache_path)
         else:
-            print("Downloading and processing dataset...")
+            log.info("Downloading and processing dataset...")
             self.dataset = self._download_and_process()
+
+        log.info(self.dataset)
 
         return self.dataset
 
