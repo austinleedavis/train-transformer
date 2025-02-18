@@ -5,7 +5,6 @@ import datasets
 import hydra
 import pyrootutils
 import torch
-import wandb
 from dotenv import load_dotenv
 from omegaconf import DictConfig
 from transformers import (
@@ -14,10 +13,9 @@ from transformers import (
     PreTrainedTokenizerFast,
 )
 from transformers import Trainer as HfTrainer
-from transformers import (
-    TrainingArguments,
-)
+from transformers import TrainingArguments
 
+import wandb
 from callbacks import NtfyCallback
 from dataset_processor import DatasetProcessor
 
@@ -117,17 +115,12 @@ class DatasetLoader:
     def __init__(self, config: DictConfig, tokenizer: PreTrainedTokenizerFast):
         self.config = config
         self.tokenizer = tokenizer
-        cfg = config.dataset.load_dataset
-
-        self.cache_path = os.path.join(
-            config.run.data_dir,
-            "-".join([cfg.path, cfg.name, cfg.split]),
-        )
+        self.save_to = config.dataset.save_to
 
     def load(self) -> datasets.Dataset:
-        if os.path.exists(self.cache_path):
+        if os.path.exists(self.save_to):
             log.info("Loading dataset from cache...")
-            self.dataset = datasets.load_from_disk(self.cache_path)
+            self.dataset = datasets.load_from_disk(self.save_to)
         else:
             log.info("Downloading and processing dataset...")
             self.dataset = self._download_and_process()
@@ -138,18 +131,20 @@ class DatasetLoader:
 
     def _download_and_process(self) -> datasets.Dataset:
 
-        dataset: datasets.Dataset = hydra.utils.call(self.config.dataset.load_dataset)
+        self.dataset: datasets.Dataset = hydra.utils.call(self.config.dataset.load_dataset)
 
         # apply dataset transforms
         transforms: list = self.config.dataset.get("transforms", [])
         processor = DatasetProcessor(transforms)
-        dataset = processor.process(dataset)
+        self.dataset = processor.process(self.dataset)
 
         # tokenize the dataset
-        dataset = dataset.map(lambda ex: self.tokenizer(ex["text"]), desc="Tokenize")
+        self.dataset = self.dataset.map(lambda ex: self.tokenizer(ex["text"]), desc="Tokenize")
 
-        dataset.save_to_disk(self.cache_path)
-        return dataset
+        assert len(self.dataset["train"]) > 0
+
+        self.dataset.save_to_disk(self.save_to, max_shard_size="50MB")
+        return self.dataset
 
 
 if __name__ == "__main__":
