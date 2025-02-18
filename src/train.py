@@ -3,10 +3,9 @@ import os
 import datasets
 import hydra
 import pyrootutils
-import torch
 import wandb
 from dotenv import load_dotenv
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from transformers import (
     DataCollatorForLanguageModeling,
     GPT2LMHeadModel,
@@ -35,6 +34,12 @@ _HYDRA_PARAMS = {
 }
 
 
+@hydra.main(**_HYDRA_PARAMS)
+def main(cfg: DictConfig) -> None:
+    trainer = Trainer(cfg)
+    trainer.train()
+
+
 class Trainer:
 
     config: DictConfig
@@ -48,19 +53,12 @@ class Trainer:
         self.config: DictConfig = config
         self.ntfy = NtfyCallback(topic=os.environ["NTFY_TOPIC"])
 
-        self.llm = hydra.utils.call(config.llm.from_pretrained)
+        self.llm = self._init_llm()
         self.tokenizer = hydra.utils.instantiate(config.llm.tokenizer.instance)
         self.tokenizer.model_max_length = self.llm.config.n_ctx
 
         # setup and process dataset
-        self.dataset = hydra.utils.call(config.dataset.load_dataset)
-        if config.run.debug:
-            self.dataset = self.dataset.select(range(10000))
-        transforms = config.dataset.get("transforms", [])
-        processor = DatasetProcessor(transforms)
-        self.dataset = processor.process(self.dataset)
-
-        self.dataset = self.dataset.map(lambda ex: self.tokenizer(ex["text"]), desc="Tokenize")
+        self.dataset = DatasetLoader(self.config, self.tokenizer).load()
 
         # setup Hf Trainer
         self.hf_trainer_args = hydra.utils.instantiate(config.training)
@@ -84,11 +82,56 @@ class Trainer:
             if wandb.run:
                 wandb.run.finish(exit_code=-1)
 
+    def _init_llm(self):
+        cfg = self.config.llm
+        llm = (
+            hydra.utils.call(cfg.from_pretrained)
+            if "from_pretrained" in cfg
+            else hydra.utils.instantiate(cfg.instance)
+        )
+        # oddly, the LLM in not loaded to the correct dtype automatically
+        llm.to(llm.config.torch_dtype)
+        return llm
 
-@hydra.main(**_HYDRA_PARAMS)
-def main(cfg: DictConfig) -> None:
-    trainer = Trainer(cfg)
-    trainer.train()
+
+class DatasetLoader:
+    """Not to be confused with a dataloader, this handles loading, preparing, and cacheing the
+    dataset on disk."""
+
+    def __init__(self, config: DictConfig, tokenizer: PreTrainedTokenizerFast):
+        self.config = config
+        self.tokenizer = tokenizer
+        cfg = config.dataset.load_dataset
+
+        self.cache_path = os.path.join(
+            config.run.data_dir,
+            "-".join([cfg.path, cfg.name, cfg.split]),
+        )
+
+    def load(self) -> datasets.Dataset:
+        if os.path.exists(self.cache_path):
+            print("Loading dataset from cache...")
+            self.dataset = datasets.load_from_disk(self.cache_path)
+        else:
+            print("Downloading and processing dataset...")
+            self.dataset = self._download_and_process()
+
+        return self.dataset
+
+    def _download_and_process(self) -> datasets.Dataset:
+
+        dataset: datasets.Dataset = hydra.utils.call(self.config.dataset.load_dataset)
+
+        # apply dataset transforms
+        transforms: list = self.config.dataset.get("transforms", [])
+        processor = DatasetProcessor(transforms)
+        dataset = processor.process(dataset)
+
+        # tokenize the dataset
+        dataset = dataset.map(lambda ex: self.tokenizer(ex["text"]), desc="Tokenize")
+
+        dataset.save_to_disk(self.cache_path)
+        return dataset
 
 
 if __name__ == "__main__":

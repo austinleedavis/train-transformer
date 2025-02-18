@@ -3,6 +3,7 @@ load_dataset:
   path: austindavis/lichess-uci
   name: "202302"
   split: train
+is_upper: true
 transforms:
   - type: filter
     callable: "lambda w,b: w>1500 and b>1500"

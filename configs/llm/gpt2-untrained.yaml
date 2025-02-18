@@ -1,0 +1,38 @@
+instance:
+  _target_: transformers.GPT2LMHeadModel
+  config:
+    _target_: transformers.GPT2Config
+    # structure
+    model_type: gpt2
+    activation_function: "gelu_new"
+    initializer_range: 0.02
+    layer_norm_epsilon: 1e-5
+    n_ctx: 1024
+    n_embd: 768
+    n_head: 12
+    n_inner: null # defaults to 4x n_embd
+    n_layer: 12
+    n_positions: 1024
+    tie_word_embeddings: true
+    torch_dtype: bfloat16
+
+    # vocabulary
+    vocab_size: 72
+    bos_token_id: 1
+    eos_token_id: 2
+    pad_token_id: 0
+
+    # training
+    attn_pdrop: 0.1
+    embd_pdrop: 0.1
+    resid_pdrop: 0.1
+
+    # generation
+    temperature: 1.0
+    use_cache: True
+    max_length: 100
+
+tokenizer:
+  instance:
+    _target_: src.chess_tokenizers.UciTileTokenizer
+    upper_promotions: ${dataset.is_upper}

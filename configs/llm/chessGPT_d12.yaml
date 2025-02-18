@@ -4,4 +4,4 @@ from_pretrained:
 tokenizer:
   instance:
     _target_: src.chess_tokenizers.UciTileTokenizer
-    upper_promotions: true
+    upper_promotions: ${dataset.is_upper}

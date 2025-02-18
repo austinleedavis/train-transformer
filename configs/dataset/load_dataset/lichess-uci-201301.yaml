@@ -1,4 +1,0 @@
-_target_: datasets.load_dataset
-path: austindavis/lichess-uci
-name: "201301"
-split: train

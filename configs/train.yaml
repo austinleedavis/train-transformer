@@ -1,13 +1,13 @@
 defaults:
-  - dataset/load_dataset: lichess-uci-201301
-  - dataset/transforms: only-promotions
-  - llm: chessGPT_d12
+  - dataset: lichess-uci-201301
+  - llm: gpt2-untrained
 
 run:
   debug: false
   report_to: wandb # none
   name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
   model_dir: models/${run.name}
+  data_dir: data
 
 training: ## arguments given to Hf Trainer
   _target_: transformers.TrainingArguments
@@ -18,6 +18,11 @@ training: ## arguments given to Hf Trainer
   torch_compile: false
   run_name: ${run.name}
   output_dir: ${run.model_dir}
+  num_train_epochs: 1.0
+
+  ####################
+  # Default values for transformers.TrainingArguments
+  ####################
   # accelerator_config:
   #   dispatch_batches: null
   #   even_batches: true
@@ -121,7 +126,6 @@ training: ## arguments given to Hf Trainer
   # mp_parameters: ''
   # neftune_noise_alpha: null
   # no_cuda: false
-  # num_train_epochs: 3.0
   # optim: !!python/object/apply:builtins.getattr
   # - !!python/name:transformers.training_args.OptimizerNames ''
   # - ADAMW_TORCH
