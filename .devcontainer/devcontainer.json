@@ -5,10 +5,15 @@
   "mounts": [
     "source=${localWorkspaceFolder},target=/workspace,type=bind"
   ],
+  "runArgs": [
+    "--shm-size",
+    "8GB"
+  ],
   "extensions": [
     "ms-python.python",
     "ms-python.vscode-pylance",
     "ms-python.black-formatter",
+    "ms-toolsai.tensorboard",
     "github.vscode-github-actions",
     "njpwerner.autodocstring"
   ]
