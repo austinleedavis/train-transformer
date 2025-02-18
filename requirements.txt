@@ -18,6 +18,7 @@ omegaconf
 
 # --------- loggers --------- #
 wandb
+torch_tb_profiler
 
 # --------- others --------- #
 pyrootutils # project root setup
