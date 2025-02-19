@@ -1,5 +1,5 @@
 defaults:
-  - dataset: lichess-uci-202302
+  - dataset: lichess-uci-201301
   - llm: chessGPT_d12
 
 hydra:

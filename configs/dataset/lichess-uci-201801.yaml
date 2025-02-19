@@ -4,9 +4,10 @@ save_to: data/lichess-uci-201801
 load_dataset:
   _target_: datasets.load_dataset
   path: austindavis/lichess-uci
+  name: "201801"
   split: train
   cache_dir: data/cache
-  data_files: data/201801/train-*
+  # data_files: data/201801/train-*
   num_proc: 4
 transforms:
   # This month's data does not include Elo ratings (they are all zero?!)

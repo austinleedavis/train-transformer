@@ -4,9 +4,10 @@ save_to: data/lichess-uci-203101
 load_dataset:
   _target_: datasets.load_dataset
   path: austindavis/lichess-uci
+  name: "201301"
   split: train
   cache_dir: data/cache
-  data_files: data/203101/train-*
+  # data_files: data/203101/train-*
   num_proc: 4
 transforms:
   - type: filter
