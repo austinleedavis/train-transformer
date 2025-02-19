@@ -5,15 +5,16 @@ import datasets
 import hydra
 import pyrootutils
 import torch
+import transformers
 from dotenv import load_dotenv
 from omegaconf import DictConfig
 from transformers import (
     DataCollatorForLanguageModeling,
     GPT2LMHeadModel,
     PreTrainedTokenizerFast,
+    Trainer,
+    TrainingArguments,
 )
-from transformers import Trainer as HfTrainer
-from transformers import TrainingArguments
 
 import wandb
 from callbacks import NtfyCallback
@@ -38,15 +39,15 @@ log = logging.getLogger(__name__)
 
 @hydra.main(**_HYDRA_PARAMS)
 def main(cfg: DictConfig) -> None:
-    trainer = Trainer(cfg)
+    trainer = TrainingManager(cfg)
     trainer.train()
 
 
-class Trainer:
+class TrainingManager:
 
     config: DictConfig
     dataset: datasets.Dataset
-    hf_trainer: HfTrainer
+    hf_trainer: Trainer
     hf_trainer_args: TrainingArguments
     llm: GPT2LMHeadModel
     tokenizer: PreTrainedTokenizerFast
@@ -64,7 +65,7 @@ class Trainer:
         # setup Hf Trainer
         self.hf_trainer_args = hydra.utils.instantiate(config.hf_trainer_args)
         collator = DataCollatorForLanguageModeling(self.tokenizer, mlm=False)
-        self.hf_trainer = HfTrainer(
+        self.hf_trainer = Trainer(
             self.llm,
             args=self.hf_trainer_args,
             train_dataset=self.dataset["train"],
@@ -76,8 +77,32 @@ class Trainer:
 
     def train(self):
         log.info("Train!")
+
+        class ProfCallback(transformers.TrainerCallback):
+            def __init__(self, prof):
+                self.prof = prof
+
+            def on_step_end(self, args, state, control, **kwargs):
+                self.prof.step()
+
         try:
-            self.hf_trainer.train()
+            with torch.profiler.profile(
+                activities=[
+                    torch.profiler.ProfilerActivity.CPU,
+                    torch.profiler.ProfilerActivity.CUDA,
+                ],
+                schedule=torch.profiler.schedule(
+                    skip_first=0, wait=0, warmup=0, active=2, repeat=2
+                ),
+                on_trace_ready=torch.profiler.tensorboard_trace_handler("hf-training-trainer"),
+                profile_memory=True,
+                with_stack=True,
+                record_shapes=True,
+            ) as prof:
+
+                self.hf_trainer.add_callback(ProfCallback(prof=prof))
+
+                self.hf_trainer.train()
         finally:
             self.ntfy.send_notification("Training failed")
             if wandb.run:
