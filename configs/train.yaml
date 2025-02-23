@@ -1,5 +1,5 @@
 defaults:
-  - dataset: lichess-uci-201301
+  - dataset: lichess-uci-202302
   - llm: chessGPT_d12
 
 hydra:
@@ -11,21 +11,24 @@ run:
   debug: false
   report_to: wandb
   name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
+  project: train_transformer
   model_dir: models/${run.name}
   data_dir: data
-  force_dtype: bfloat16
+  # force_dtype: bfloat16
 
 hf_trainer_args: ## arguments given to Hf Trainer
   _target_: transformers.TrainingArguments
   report_to: ${run.report_to}
-  auto_find_batch_size: true
+  auto_find_batch_size: false
+  per_device_train_batch_size: 1
   save_total_limit: 1
   torch_compile: false
   run_name: ${run.name}
   output_dir: ${run.model_dir}
   num_train_epochs: 1.0
   learning_rate: 5.0e-05
-  bf16: true
+  resume_from_checkpoint: models/2025-02-23/00-35-42/checkpoint-19500
+  # bf16: true
 
   ####################
   # Default values for transformers.TrainingArguments

@@ -11,12 +11,12 @@ load_dataset:
   num_proc: 4
 transforms:
   # This month's data does not include Elo ratings (they are all zero?!)
-  # - type: filter
-  #   callable: "lambda w,b: w>1500 and b>1500"
-  #   kwargs:
-  #     desc: "Filter Player Elo"
-  #     input_columns: ["WhiteElo", "BlackElo"]
-  #     num_proc: 4
+  - type: filter
+    callable: "lambda w,b: w and b and w>1500 and b>1500"
+    kwargs:
+      desc: "Filter Player Elo"
+      input_columns: ["WhiteElo", "BlackElo"]
+      num_proc: 4
   - type: map
     callable: "lambda t: {'transcript_len': len(t)}"
     kwargs:
