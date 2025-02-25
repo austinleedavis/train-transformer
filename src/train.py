@@ -17,8 +17,9 @@ from transformers import (
 )
 
 import wandb
-from callbacks import NtfyCallback
 from dataset_processor import DatasetProcessor
+
+# from ntfy import Ntfy
 
 load_dotenv()
 
@@ -40,7 +41,7 @@ log = logging.getLogger(__name__)
 @hydra.main(**_HYDRA_PARAMS)
 def main(cfg: DictConfig) -> None:
     trainer = TrainingManager(cfg)
-    trainer.train()
+    # trainer.train()
 
 
 class TrainingManager:
@@ -54,7 +55,7 @@ class TrainingManager:
 
     def __init__(self, config: DictConfig):
         self.config: DictConfig = config
-        self.ntfy = NtfyCallback(topic=os.environ.get("NTFY_TOPIC", None))
+        # self.ntfy = Ntfy(topic=os.environ.get("NTFY_TOPIC", None))
         self.llm = self._init_llm()
         self.tokenizer = hydra.utils.instantiate(config.llm.tokenizer.instance)
         self.tokenizer.model_max_length = self.llm.config.n_ctx
@@ -72,7 +73,7 @@ class TrainingManager:
             eval_dataset=self.dataset["test"],
             data_collator=collator,
             processing_class=self.tokenizer,
-            callbacks=[self.ntfy],
+            # callbacks=[self.ntfy],
         )
 
     def train(self):
@@ -104,7 +105,7 @@ class TrainingManager:
 
                 self.hf_trainer.train()
         finally:
-            self.ntfy.send_notification("Training failed")
+            # self.ntfy.send_notification("Training failed")
             if wandb.run:
                 wandb.run.finish(exit_code=-1)
 

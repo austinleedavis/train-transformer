@@ -1,36 +1,30 @@
 import http.client
 import logging
-
-from transformers import TrainerCallback
-from transformers.trainer_callback import TrainerControl, TrainerState
-from transformers.training_args import TrainingArguments
+from contextlib import contextmanager
 
 
-class NtfyCallback(TrainerCallback):
-    """A callback class for sending notifications at the start and end of training.
-
-    Args:
-        topic (str): The Ntfy.sh topic to notify
-    """
+class Ntfy:
 
     logger = logging.getLogger(__name__)
     topic: str
 
     def __init__(self, topic: str = None):
+        """Initializes the Ntfy instance with an optional topic.
+
+        If no topic is specified, a warning is logged and notifications will be logged instead of
+        sent.
+        """
         self.topic = topic
         if topic is None:
             self.logger.warning("No topic specified. Ntfy will use Logger instead.")
             self.send_notification = lambda *a, **k: self.logger.info(str((a, k)))
 
-    def on_train_begin(self, args, state, control, **kwargs):
-        self.send_notification(f"Training Began: {args.output_dir}")
-
-    def on_train_end(
-        self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs
-    ):
-        self.send_notification(f"Training Ended: {args.output_dir}")
-
     def send_notification(self, message):
+        """Sends a notification with the given message to the specified topic.
+
+        If the topic does not start with a "/", it is prepended. Logs the result of the notification
+        attempt.
+        """
 
         if len(self.topic) > 0 and self.topic[0] != "/":
             self.topic = "/" + self.topic
@@ -55,3 +49,9 @@ class NtfyCallback(TrainerCallback):
         finally:
             # Ensure the connection is closed
             conn.close()
+
+    @contextmanager
+    def context(self, desc=""):
+        self.send_notification(f"Entered: {desc}")
+        yield
+        self.send_notification(f"Exited: {desc}")

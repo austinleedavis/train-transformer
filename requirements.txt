@@ -4,6 +4,7 @@ torchvision
 tabulate # torch.compile prerequisite
 scipy # torch.compile prerequisite
 numpy # torch.compile prerequisite
+lightning # pytorch lightning for training
 
 # --------- huggingface --------- #
 datasets

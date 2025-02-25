@@ -8,26 +8,26 @@ load_dataset:
   split: train
   cache_dir: data/cache
   # data_files: data/203101/train-*
-  num_proc: ${run.num_proc}
+  num_proc: ${run.hf_dataset_num_proc}
 transforms:
   - type: filter
     callable: "lambda w,b: w>1500 and b>1500"
     kwargs:
       desc: "Filter Player Elo"
       input_columns: ["WhiteElo", "BlackElo"]
-      num_proc: ${run.num_proc}
+      num_proc: ${run.hf_dataset_num_proc}
   - type: map
     callable: "lambda t: {'transcript_len': len(t)}"
     kwargs:
       desc: "Compute transcript len"
       input_columns: Transcript
-      num_proc: ${run.num_proc}
+      num_proc: ${run.hf_dataset_num_proc}
   - type: filter
     callable: "lambda t: t >10 and t %5 != 4"
     kwargs:
       desc: "Filter Promotions"
       input_columns: ["transcript_len"]
-      num_proc: ${run.num_proc}
+      num_proc: ${run.hf_dataset_num_proc}
   - type: select_columns
     kwargs:
       column_names: ["Transcript"]
@@ -42,4 +42,4 @@ transforms:
     callable: "lambda ex: self.tokenizer(ex['text'])"
     kwargs:
       desc: "Tokenize"
-      num_proc: ${run.num_proc}
+      num_proc: ${run.hf_dataset_num_proc}

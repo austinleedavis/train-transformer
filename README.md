@@ -69,6 +69,18 @@ After running make initialize-fresh, your environment is ready. Access the devel
   docker run --rm -v $(pwd):/workspace $(basename $(pwd)):latest bash -c "./scripts/train.sh"
   ```
 
+### Environment Variables
+
+You should create a `.env` to save several environment variables. For example:
+
+```sh
+WANDB_API_KEY=...
+NTFY_TOPIC=<your_topic_here>
+HYDRA_CONFIG_PATH=configs
+HYDRA_FULL_ERROR=1
+CUDA_LAUNCH_BLOCKING=1
+```
+
 ## 📂 Project Structure
 
 ```
