@@ -75,6 +75,10 @@ class DatasetProcessor:
 
         self.transforms = transforms
 
+    def with_tokenizer(self, tokenizer):
+        self.tokenizer = tokenizer
+        return self
+
     def process(self, dataset: Dataset):
         """Apply the stored transformations to a given dataset.
 
@@ -90,20 +94,19 @@ class DatasetProcessor:
         for transform in self.transforms:
             transform_type = transform.get("type", None)
             kwargs = transform.get("kwargs", {})
-
             match transform_type:
                 case self.SELECT:
-                    indices = eval(transform.callable)
+                    indices = eval(transform.callable, locals())
                     dataset = dataset.select(indices, **kwargs)
                 case self.SELECT_COLUMNS:
                     dataset = dataset.select_columns(**kwargs)
                 case self.RENAME_COLUMNS:
                     dataset = dataset.rename_columns(**kwargs)
                 case self.FILTER:
-                    filter_fn = eval(transform.callable)
+                    filter_fn = eval(transform.callable, locals())
                     dataset = dataset.filter(filter_fn, **kwargs)
                 case self.MAP:
-                    map_fn = eval(transform.callable)
+                    map_fn = eval(transform.callable, locals())
                     dataset = dataset.map(map_fn, **kwargs)
                 case self.TRAIN_TEST_SPLIT:
                     dataset = dataset.train_test_split(**kwargs)
