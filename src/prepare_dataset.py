@@ -62,11 +62,8 @@ class DatasetLoader:
 
         # apply dataset transforms
         transforms: list = self.config.dataset.get("transforms", [])
-        processor = DatasetProcessor(transforms)
+        processor = DatasetProcessor(transforms).with_tokenizer(self.tokenizer)
         self.dataset = processor.process(self.dataset)
-
-        # tokenize the dataset
-        self.dataset = self.dataset.map(lambda ex: self.tokenizer(ex["text"]), desc="Tokenize")
 
         assert len(self.dataset["train"]) > 0
 
