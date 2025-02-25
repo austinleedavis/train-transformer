@@ -39,3 +39,8 @@ transforms:
   - type: train_test_split
     kwargs:
       test_size: 0.01
+  - type: map
+    callable: "lambda ex: self.tokenizer(ex['text'])"
+    kwargs:
+      desc: "Tokenize"
+      num_proc: ${run.num_proc}
