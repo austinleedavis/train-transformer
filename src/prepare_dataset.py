@@ -15,9 +15,14 @@ root = pyrootutils.setup_root(
     pythonpath=True,
     dotenv=True,
 )
+
 _HYDRA_PARAMS = {
     "version_base": "1.3",
-    "config_path": str(root / "configs"),
+    "config_path": (
+        os.path.join(root, os.environ.get("HYDRA_CONFIG_PATH", None))
+        if os.environ.get("HYDRA_CONFIG_PATH", None)
+        else str(root / "configs")
+    ),
     "config_name": "train.yaml",
 }
 
