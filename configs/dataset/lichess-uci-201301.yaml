@@ -1,5 +1,5 @@
 is_upper: true
-save_to: data/lichess-uci-203101
+save_to: data/lichess-uci-201301
 
 load_dataset:
   _target_: datasets.load_dataset
