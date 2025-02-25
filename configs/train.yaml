@@ -1,5 +1,5 @@
 defaults:
-  - dataset: lichess-uci-202302
+  - dataset: lichess-uci-201301
   - llm: chessGPT_d12
 
 hydra:
@@ -10,6 +10,7 @@ hydra:
 run:
   debug: false
   report_to: wandb
+  num_proc: 4
   name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
   project: train_transformer
   model_dir: models/${run.name}

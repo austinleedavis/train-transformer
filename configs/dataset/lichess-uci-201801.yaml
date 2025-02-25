@@ -8,27 +8,27 @@ load_dataset:
   split: train
   cache_dir: data/cache
   # data_files: data/201801/train-*
-  num_proc: 4
+  num_proc: ${run.num_proc}
 transforms:
   # This month's data does not include Elo ratings (they are all zero?!)
   # - type: filter
-  #   callable: "lambda w,b: w>1500 and b>1500"
+  #   callable: "lambda w,b: w and b and w>1500 and b>1500"
   #   kwargs:
   #     desc: "Filter Player Elo"
   #     input_columns: ["WhiteElo", "BlackElo"]
-  #     num_proc: 4
+  #     num_proc: ${run.num_proc}
   - type: map
     callable: "lambda t: {'transcript_len': len(t)}"
     kwargs:
       desc: "Compute transcript len"
       input_columns: Transcript
-      num_proc: 4
+      num_proc: ${run.num_proc}
   - type: filter
     callable: "lambda t: t >10 and t %5 != 4"
     kwargs:
       desc: "Filter Promotions"
       input_columns: ["transcript_len"]
-      num_proc: 4
+      num_proc: ${run.num_proc}
   - type: select_columns
     kwargs:
       column_names: ["Transcript"]
