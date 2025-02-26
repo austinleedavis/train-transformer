@@ -76,11 +76,11 @@ class SimpleDataCollator:
         self.max_length = max_length
 
     def __call__(self, batch):
-        """
-        Pads input_ids to the max length of the sequence or the max length of the
-        model, whichever is lesser.
+        """Pads input_ids to the max length of the sequence or the max length of the model,
+        whichever is lesser.
 
-        batch (list[dict[str, torch.Tensor]]): Batch inputs have a single key: "input_ids". When padding is applied, "attention_mask" is added.
+        batch (list[dict[str, torch.Tensor]]): Batch inputs have a single key: "input_ids". When
+        padding is applied, "attention_mask" is added.
         """
 
         padded = self.tokenizer.pad(batch)  # resulting keys: ['input_ids', 'attention_mask']
