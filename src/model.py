@@ -14,6 +14,7 @@ class GPT2Lightning(L.LightningModule):
     def __init__(self, config: DictConfig):
         super().__init__()
         self.config = config
+        self.automatic_optimization = True
 
         self.model = self._init_llm()
 
