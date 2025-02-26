@@ -1,0 +1,14 @@
+is_upper: true
+save_to: data/lichess-uci-synthetic
+
+load_dataset:
+  _target_: datasets.load_dataset
+  path: austindavis/lichess-uci
+  name: "synthetic"
+  split: train
+  cache_dir: data/cache
+  num_proc: ${run.hf_dataset_num_proc}
+transforms:
+  - type: train_test_split
+    kwargs:
+      test_size: 1

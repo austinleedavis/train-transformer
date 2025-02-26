@@ -6,7 +6,7 @@ run:
   project: train_transformer
   data_dir: data
   loader: # parameters for dataloader
-    batch_size: 5 # loader batch size
+    batch_size: 2 # loader batch size
     num_workers: 4 # num workers for loader
   hf_dataset_num_proc: 4
 
@@ -25,31 +25,15 @@ trainer:
   # accumulate_grad_batches: 10
   fast_dev_run: false
   gradient_clip_val: 0.5
-  # limit_predict_batches: ???
-  # limit_test_batches: ???
-  # limit_train_batches: ???
-  limit_val_batches: 2000 # number of val batches to use
   max_epochs: 1
   num_nodes: 1 # number of nodes for distributed training
-  val_check_interval: 10000
   callbacks:
-    - _target_: lightning.pytorch.callbacks.EarlyStopping
-      monitor: val_loss
-      mode: max
-    - _target_: lightning.pytorch.callbacks.OnExceptionCheckpoint
-      dirpath: ${hydra:runtime.output_dir}/exception
-    - _target_: lightning.pytorch.callbacks.ModelCheckpoint
-      dirpath: ${hydra:runtime.output_dir}/checkpoint
-      train_time_interval:
-        _target_: datetime.timedelta
-        minutes: 30.0
-      save_top_k: 1
+    - _target_: lightning.pytorch.callbacks.BatchSizeFinder
+      mode: binsearch
+      steps_per_trial: 10
+      init_val: 2
+      batch_arg_name: batch_size
   logger:
-    - _target_: lightning.pytorch.loggers.WandbLogger
-      name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
-      project: ${hydra:job.name}
-      log_model: false
-      checkpoint_name: null
     - _target_: lightning.pytorch.loggers.CSVLogger
       save_dir: ${hydra:runtime.output_dir}
       name: lightning_logs
