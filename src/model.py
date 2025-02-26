@@ -28,7 +28,7 @@ class GPT2Lightning(L.LightningModule):
             hydra.utils.call(self.config.llm.from_pretrained)
             if "from_pretrained" in self.config.llm
             else hydra.utils.instantiate(self.config.llm.instance)
-        )
+        ).train()
 
         if "loss_fn" in self.config:
             llm.loss_function = hydra.utils.instantiate(self.config.loss_fn)
@@ -75,13 +75,10 @@ class GPT2Lightning(L.LightningModule):
         return self.model.forward(**inputs, labels=inputs["input_ids"])
 
     def training_step(self, batch, batch_idx):
-        inputs = batch
-        target = batch
-        output = self.model.forward(**inputs, labels=inputs["input_ids"])
-        output = self(inputs, target)
+        output = self.model.forward(**batch, labels=batch["input_ids"])
         loss = output.loss
         self.log("train_loss", loss)
-        return loss
+        return {"loss": loss}
 
     def validation_step(self, batch, batch_idx):
         inputs = batch
