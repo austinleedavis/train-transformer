@@ -51,8 +51,6 @@ class GPT2Lightning(L.LightningModule):
         log.info(f"LLM dtype set to {train_dtype}.")
 
         if "compile" in self.config:
-            # options = None
-            # if "options" in self.config.compile:
             options = self.config.compile.options
             llm = torch.compile(llm, options=options)
 
@@ -71,9 +69,8 @@ class GPT2Lightning(L.LightningModule):
         self.log("train_loss", loss)
         return {"loss": loss}
 
-    def validation_step(self, batch, batch_idx):  # TODO
-        inputs = batch
-        target = batch
-        output = self(inputs, target)
+    def validation_step(self, batch, batch_idx):
+        output = self.model.forward(**batch, labels=batch["input_ids"])
         loss = output.loss
         self.log("val_loss", loss)
+        return {"loss": loss}
