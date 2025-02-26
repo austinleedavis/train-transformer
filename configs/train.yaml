@@ -1,6 +1,7 @@
 defaults:
   - dataset: lichess-uci-synthetic
   - llm: chessGPT_d12
+  - compile: no_options
 
 run:
   project: train_transformer
@@ -13,12 +14,6 @@ run:
 loss_fn:
   _target_: torch.nn.CrossEntropyLoss
 lr: 0.0001
-
-compile:
-  options: null
-  # options:
-  #   triton.cudagraphs: True
-  #   shape_padding: True
 
 trainer:
   _target_: lightning.pytorch.trainer.trainer.Trainer

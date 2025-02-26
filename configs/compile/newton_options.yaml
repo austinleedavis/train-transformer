@@ -1,0 +1,3 @@
+options:
+  triton.cudagraphs: True
+  shape_padding: True
