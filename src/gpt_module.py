@@ -62,16 +62,6 @@ class GPT2Lightning(L.LightningModule):
         optimizer = AdamW(self.parameters(), lr=self.lr)
         return {"optimizer": optimizer}
 
-    # def configure_callbacks(self):
-    #     early_stop = callbacks.EarlyStopping(monitor="val_acc", mode="max")
-    #     ex_checkpoint = callbacks.OnExceptionCheckpoint(dirpath="models/litmodel_ex")
-    #     checkpoint = callbacks.ModelCheckpoint(
-    #         dirpath="models/litmodel",
-    #         train_time_interval=timedelta(minutes=30.0),
-    #         save_top_k=1,
-    #     )
-    #     return [early_stop, checkpoint, ex_checkpoint]
-
     def forward(self, inputs: torch.LongTensor, attention_mask: torch.LongTensor):
         return self.model.forward(**inputs, labels=inputs["input_ids"])
 
@@ -81,7 +71,7 @@ class GPT2Lightning(L.LightningModule):
         self.log("train_loss", loss)
         return {"loss": loss}
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx):  # TODO
         inputs = batch
         target = batch
         output = self(inputs, target)
