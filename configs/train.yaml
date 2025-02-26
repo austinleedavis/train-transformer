@@ -46,8 +46,8 @@ trainer:
       save_top_k: 1
   logger:
     - _target_: lightning.pytorch.loggers.WandbLogger
-      name: ${hydra:job.name}
-      project: ${run.project}
+      name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
+      project: ${hydra:job.name}
       log_model: false
       checkpoint_name: null
     - _target_: lightning.pytorch.loggers.CSVLogger
