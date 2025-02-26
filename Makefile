@@ -34,6 +34,7 @@ clean-logs: ## Clean logs
 
 format: ## Run pre-commit hooks
 	pre-commit run -a
+	rm -rf node_modules
 
 sync: ## Merge changes from main branch to your current branch
 	git pull
