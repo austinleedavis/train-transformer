@@ -1,5 +1,5 @@
 defaults:
-  - dataset: lichess-uci-synthetic
+  - dataset: lichess-uci-202302
   - llm: chessGPT_d12
   - compile: no_options
 
