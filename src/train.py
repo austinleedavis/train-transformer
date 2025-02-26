@@ -33,7 +33,6 @@ def main(config: DictConfig):
     with Ntfy(topic=os.environ.get("NTFY_TOPIC", None)).context("Job"):
 
         dm = LichessDataModule(config)
-        dm.prepare_data()
         model = GPT2Lightning(config)
 
         trainer: Trainer = hydra.utils.instantiate(config.trainer)
