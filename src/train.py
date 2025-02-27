@@ -35,16 +35,18 @@ _HYDRA_PARAMS = {
 def main(config: DictConfig):
     print(OmegaConf.to_yaml(config))
 
-    with handle_ntfy_wandb(config):
+    with handle_ntfy_wandb(config) as (ntfy, run):
         dm = LichessDataModule(config)
         model = GPT2Lightning(config)
         trainer: Trainer = hydra.utils.instantiate(config.trainer)
 
-        tuner = Tuner(trainer)
-        lr_finder = tuner.lr_find(model=model, datamodule=dm)
-        print(f"{lr_finder.results=}", f"{lr_finder.suggestion()=}", sep="\n")
-        new_lr = lr_finder.suggestion()
-        model.hparams.lr = new_lr
+        if "lr_find" in config.run.keys() and config.run.lr_find:
+            tuner = Tuner(trainer)
+            lr_finder = tuner.lr_find(model=model, datamodule=dm)
+            print(f"{lr_finder.results=}", f"{lr_finder.suggestion()=}", sep="\n")
+            new_lr = lr_finder.suggestion()
+            ntfy.send_notification(f"{lr_finder.suggestion()=}")
+            return
 
         trainer.fit(model=model, datamodule=dm)
 
@@ -66,7 +68,7 @@ def handle_ntfy_wandb(config: DictConfig):
         final_text = f"🏆️ Finished"
         exit_code = 0
 
-        yield
+        yield (ntfy, run)
     except Exception as e:
         final_text = f"💢 Exception occurred {e}"
         exit_code = -1

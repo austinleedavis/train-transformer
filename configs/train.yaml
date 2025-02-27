@@ -11,6 +11,7 @@ run:
     num_workers: 4 # num workers for loader
   hf_dataset_num_proc: 4
   force_dtype: bfloat16
+  lr_find: true
 
 loss_fn:
   _target_: torch.nn.CrossEntropyLoss
