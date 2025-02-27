@@ -54,7 +54,7 @@ def handle_ntfy_wandb(config: DictConfig):
     ntfy = Ntfy(topic=os.environ.get("NTFY_TOPIC", None))
     try:
         hc = HydraConfig.get()
-        project = hc.job.name
+        project = config.run.project
         name = "/".join(hc.run.dir.split("/")[1:])
         extra_headers = {"Title": f"{project} {name}"}
         if any(["WandbLogger" in list(cb.values())[0] for cb in config.trainer.logger]):
