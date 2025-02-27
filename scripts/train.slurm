@@ -3,8 +3,9 @@
 #SBATCH --time=24:00:00
 #SBATCH --partition=highgpu
 #SBATCH --gres=gpu:8
-#SBATCH --cpus-per-task=64
-#SBATCH --nodes=1
+#SBATCH --exclusive
+##SBATCH --cpus-per-task=64
+##SBATCH --nodes=1
 #SBATCH --output=train_transformer_%j.out
 #SBATCH --error=train_transformer_%j.out
 
