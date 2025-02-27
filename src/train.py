@@ -6,7 +6,8 @@ import pyrootutils
 import torch
 from hydra.core.hydra_config import HydraConfig
 from lightning.pytorch import Trainer
-from omegaconf import DictConfig
+from lightning.pytorch.tuner import Tuner
+from omegaconf import DictConfig, OmegaConf
 
 import wandb
 from data_module import LichessDataModule
@@ -32,13 +33,11 @@ _HYDRA_PARAMS = {
 
 @hydra.main(**_HYDRA_PARAMS)
 def main(config: DictConfig):
-    print(config)
-    with Ntfy(topic=os.environ.get("NTFY_TOPIC", None)).context("Job"):
+    print(OmegaConf.to_yaml(config))
 
     with handle_ntfy_wandb(config):
         dm = LichessDataModule(config)
         model = GPT2Lightning(config)
-
         trainer: Trainer = hydra.utils.instantiate(config.trainer)
 
         tuner = Tuner(trainer)
