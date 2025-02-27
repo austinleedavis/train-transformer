@@ -58,7 +58,10 @@ class GPT2Lightning(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=self.lr)
-        return {"optimizer": optimizer}
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer, max_lr=1e-3, total_steps=self.trainer.estimated_stepping_batches
+        )
+        return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
     def forward(self, inputs: torch.LongTensor, attention_mask: torch.LongTensor = None):
         return self.model.forward(**inputs, labels=inputs["input_ids"])
@@ -72,5 +75,11 @@ class GPT2Lightning(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         output = self.model.forward(**batch, labels=batch["input_ids"])
         loss = output.loss
-        self.log("val_loss", loss)
+        self.log("val_loss", loss, sync_dist=True)  # synch for multi-gpu training
+        return {"loss": loss}
+
+    def test_step(self, batch, batch_idx):
+        output = self.model.forward(**batch, labels=batch["input_ids"])
+        loss = output.loss
+        self.log("test_loss", loss, sync_dist=True)  # synch for multi-gpu training
         return {"loss": loss}
