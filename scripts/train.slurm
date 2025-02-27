@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=64
 #SBATCH --nodes=1
 #SBATCH --output=train_transformer_%j.out
-#SBATCH --error=train_transformer_%j.err
+#SBATCH --error=%output
 
 # Load required modules
 module load apptainer
