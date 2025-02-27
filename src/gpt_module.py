@@ -60,7 +60,7 @@ class GPT2Lightning(L.LightningModule):
         optimizer = AdamW(self.parameters(), lr=self.lr)
         return {"optimizer": optimizer}
 
-    def forward(self, inputs: torch.LongTensor, attention_mask: torch.LongTensor):
+    def forward(self, inputs: torch.LongTensor, attention_mask: torch.LongTensor = None):
         return self.model.forward(**inputs, labels=inputs["input_ids"])
 
     def training_step(self, batch, batch_idx):
