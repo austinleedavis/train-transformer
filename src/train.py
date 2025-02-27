@@ -36,6 +36,13 @@ def main(config: DictConfig):
         model = GPT2Lightning(config)
 
         trainer: Trainer = hydra.utils.instantiate(config.trainer)
+
+        tuner = Tuner(trainer)
+        lr_finder = tuner.lr_find(model)
+        print(lr_finder.results)
+        new_lr = lr_finder.suggestion()
+        model.hparams.lr = new_lr
+
         trainer.fit(model=model, datamodule=dm)
 
 
