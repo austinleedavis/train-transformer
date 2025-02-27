@@ -6,8 +6,6 @@ import torch
 from omegaconf import DictConfig
 from torch.optim import AdamW
 
-log = logging.getLogger(__name__)
-
 
 class GPT2Lightning(L.LightningModule):
 
@@ -47,8 +45,8 @@ class GPT2Lightning(L.LightningModule):
         # oddly, the LLM in not loaded to the correct dtype automatically
         llm.to(dtype_mapping[train_dtype])
 
-        log.info(llm)
-        log.info(f"LLM dtype set to {train_dtype}.")
+        # print(llm)
+        print(f"LLM dtype set to {train_dtype}.")
 
         if "compile" in self.config:
             options = self.config.compile.options

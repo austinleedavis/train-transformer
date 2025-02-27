@@ -10,8 +10,6 @@ from transformers import PreTrainedTokenizerFast
 
 from src.dataset_processor import DatasetProcessor
 
-log = logging.getLogger(__name__)
-
 
 class LichessDataModule(LightningDataModule):
 
@@ -31,10 +29,10 @@ class LichessDataModule(LightningDataModule):
 
     def prepare_data(self) -> Dataset:
         if os.path.exists(self.save_to):
-            log.info(f"Prepared dataset already exists at {self.save_to}")
+            print(f"Prepared dataset already exists at {self.save_to}")
             return
 
-        log.info("Downloading and processing dataset...")
+        print("Downloading and processing dataset...")
         dataset: Dataset = hydra.utils.call(self.config.dataset.load_dataset)
 
         # apply dataset transforms

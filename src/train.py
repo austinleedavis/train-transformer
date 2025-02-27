@@ -11,26 +11,8 @@ from data_module import LichessDataModule
 from gpt_module import GPT2Lightning
 from ntfy import Ntfy
 
-torch.set_float32_matmul_precision("medium")  # take advantage of tensor cores
 
-root = pyrootutils.setup_root(
-    search_from=__file__, indicator=[".git", ".env"], pythonpath=True, dotenv=True
-)
-
-_HYDRA_PARAMS = {
-    "version_base": "1.3",
-    "config_path": (
-        os.path.join(root, os.environ.get("HYDRA_CONFIG_PATH", None))
-        if os.environ.get("HYDRA_CONFIG_PATH", None)
-        else str(root / "configs")
-    ),
-    "config_name": "train.yaml",
-}
-
-
-@hydra.main(**_HYDRA_PARAMS)
 def main(config: DictConfig):
-    print(OmegaConf.to_yaml(config))
 
     dm = LichessDataModule(config)
     model = GPT2Lightning(config)
@@ -47,4 +29,21 @@ def main(config: DictConfig):
 
 
 if __name__ == "__main__":
-    main()
+
+    # torch.set_float32_matmul_precision("medium")  # take advantage of tensor cores
+
+    root = pyrootutils.setup_root(
+        search_from=__file__,
+        indicator=[".git", ".env"],
+        pythonpath=True,
+        dotenv=True,
+    )
+    config_path = (
+        os.path.join(root, os.environ.get("HYDRA_CONFIG_PATH", None))
+        if os.environ.get("HYDRA_CONFIG_PATH", None)
+        else str(root / "configs")
+    )
+    hydra.initialize(version_base=None, config_path=config_path, job_name="train-transformer")
+    config = hydra.compose("train.yaml")
+    print(OmegaConf.to_yaml(config))
+    main(config)
