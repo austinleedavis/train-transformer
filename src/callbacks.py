@@ -1,18 +1,33 @@
 import os
+import threading
 
 from hydra.core.hydra_config import HydraConfig
 from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.loggers.wandb import WandbLogger
 
-from src.gpt_module import GPT2Lightning
 from src.ntfy import Ntfy
 
 
 class NtfyCallback(Callback):
 
+    _stop_training: bool = False
+    run_name: str = "00-00-00"
+    """Keyword to stop training."""
+
     def __init__(self):
         super().__init__()
         self.ntfy = Ntfy(topic=os.environ.get("NTFY_TOPIC", None))
+        threading.Thread(
+            target=self.ntfy.subscribe, args=(self.handle_message,), daemon=True
+        ).start()
+
+    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx):
+        if self._stop_training:
+            trainer.should_stop = True
+
+    def handle_message(self, message):
+        if message.strip().lower().split() == self.run_name:
+            self._stop_training = True
 
     def setup(self, trainer, pl_module, stage):
         if trainer.global_rank == 0:
@@ -35,38 +50,10 @@ class NtfyCallback(Callback):
         project = pl_module.cfg.run.project
         name = "/".join(hc.run.dir.split("/")[1:])
         extra_headers = {"Title": f"{project} {name}"}
-
+        self.run_name = name.split("/")[-1]
         for logger in trainer.loggers:
             if isinstance(logger, WandbLogger):
                 run = logger.experiment
                 url = run.get_url()
                 extra_headers["Click"] = url
                 return extra_headers
-
-
-# @contextmanager
-# def handle_ntfy_wandb(config: DictConfig):
-#
-#     try:
-#         hc = HydraConfig.get()
-#         project = config.run.project
-#         name = "/".join(hc.run.dir.split("/")[1:])
-#         extra_headers = {"Title": f"{project} {name}"}
-#         if any(["WandbLogger" in list(cb.values())[0] for cb in config.trainer.logger]):
-#             run = wandb.init(project=project, name=name, config=OmegaConf.to_object(config))
-#             url = run.get_url()
-#             extra_headers["Click"] = url
-
-#         ntfy.send_notification(f"🤖Started", extra_headers=extra_headers)
-#         final_text = f"🏆️ Finished"
-#         exit_code = 0
-
-#         yield (ntfy, run)
-#     except Exception as e:
-#         final_text = f"💢 Exception occurred {e}"
-#         exit_code = -1
-#         raise
-#     finally:
-#         ntfy.send_notification(final_text, extra_headers=extra_headers)
-#         if run:
-#             run.finish(exit_code)
