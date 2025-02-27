@@ -1,8 +1,8 @@
 import logging
 import os
 
-import datasets
 import hydra
+from datasets import Dataset, DatasetDict, load_from_disk
 from lightning.pytorch import LightningDataModule
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
@@ -15,7 +15,11 @@ log = logging.getLogger(__name__)
 
 class LichessDataModule(LightningDataModule):
 
-    hf_dataset: datasets.Dataset = None
+    hf_dataset: DatasetDict = None
+    train_split: Dataset = None
+    val_split: Dataset = None
+    test_split: Dataset = None
+    config: DictConfig
 
     def __init__(self, config: DictConfig):
         super().__init__()
@@ -25,13 +29,13 @@ class LichessDataModule(LightningDataModule):
         self.batch_size = config.run.loader.batch_size
         self.num_workers = config.run.loader.num_workers
 
-    def prepare_data(self) -> datasets.Dataset:
+    def prepare_data(self) -> Dataset:
         if os.path.exists(self.save_to):
             log.info(f"Prepared dataset already exists at {self.save_to}")
             return
 
         log.info("Downloading and processing dataset...")
-        dataset: datasets.Dataset = hydra.utils.call(self.config.dataset.load_dataset)
+        dataset: Dataset = hydra.utils.call(self.config.dataset.load_dataset)
 
         # apply dataset transforms
         transforms: list = self.config.dataset.get("transforms", [])
@@ -44,12 +48,14 @@ class LichessDataModule(LightningDataModule):
 
     def setup(self, stage: str = None):
         if not self.hf_dataset:
-            self.hf_dataset = datasets.load_from_disk(self.save_to)
+            self.hf_dataset = load_from_disk(self.save_to)
             self.hf_dataset = self.hf_dataset.select_columns("input_ids").with_format("torch")
+            self.train_split = self.hf_dataset["train"]
+            self.val_split = self.hf_dataset["test"]
 
     def train_dataloader(self):
         loader = DataLoader(
-            self.hf_dataset["train"],
+            self.train_split,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             collate_fn=SimpleDataCollator(self.tokenizer),
@@ -58,7 +64,16 @@ class LichessDataModule(LightningDataModule):
 
     def val_dataloader(self):
         loader = DataLoader(
-            self.hf_dataset["test"],
+            self.val_split,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            collate_fn=SimpleDataCollator(self.tokenizer),
+        )
+        return loader
+
+    def test_dataloader(self):
+        loader = DataLoader(
+            self.test_split,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             collate_fn=SimpleDataCollator(self.tokenizer),
