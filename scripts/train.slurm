@@ -17,5 +17,7 @@ apptainer exec --nv ~/containers/train-transformer_latest.sif bash <<zzzRunHEREi
 nvidia-smi
 cd ~/git/train-trainsformer
 python src/train.py
+exit
 zzzRunHEREinTheContainer
 
+scancel $SLURM_JOB_ID
