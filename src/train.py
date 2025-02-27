@@ -1,15 +1,12 @@
 import os
-from contextlib import contextmanager
 
 import hydra
 import pyrootutils
 import torch
-from hydra.core.hydra_config import HydraConfig
 from lightning.pytorch import Trainer
 from lightning.pytorch.tuner import Tuner
 from omegaconf import DictConfig, OmegaConf
 
-import wandb
 from data_module import LichessDataModule
 from gpt_module import GPT2Lightning
 from ntfy import Ntfy
@@ -35,48 +32,18 @@ _HYDRA_PARAMS = {
 def main(config: DictConfig):
     print(OmegaConf.to_yaml(config))
 
-    with handle_ntfy_wandb(config) as (ntfy, run):
-        dm = LichessDataModule(config)
-        model = GPT2Lightning(config)
-        trainer: Trainer = hydra.utils.instantiate(config.trainer)
+    dm = LichessDataModule(config)
+    model = GPT2Lightning(config)
+    trainer: Trainer = hydra.utils.instantiate(config.trainer)
 
-        if "lr_find" in config.run.keys() and config.run.lr_find:
-            tuner = Tuner(trainer)
-            lr_finder = tuner.lr_find(model=model, datamodule=dm)
-            print(f"{lr_finder.results=}", f"{lr_finder.suggestion()=}", sep="\n")
-            new_lr = lr_finder.suggestion()
-            ntfy.send_notification(f"{lr_finder.suggestion()=}")
-            return
+    # with handle_ntfy_wandb(config, trainer) as (ntfy, run):
+    if "lr_find" in config.run.keys() and config.run.lr_find:
+        tuner = Tuner(trainer)
+        lr_finder = tuner.lr_find(model=model, datamodule=dm)
+        ntfy = Ntfy(topic=os.environ.get("NTFY_TOPIC", None))
+        ntfy.send_notification(f"{lr_finder.suggestion()=}")
 
-        trainer.fit(model=model, datamodule=dm)
-
-
-@contextmanager
-def handle_ntfy_wandb(config: DictConfig):
-    ntfy = Ntfy(topic=os.environ.get("NTFY_TOPIC", None))
-    try:
-        hc = HydraConfig.get()
-        project = config.run.project
-        name = "/".join(hc.run.dir.split("/")[1:])
-        extra_headers = {"Title": f"{project} {name}"}
-        if any(["WandbLogger" in list(cb.values())[0] for cb in config.trainer.logger]):
-            run = wandb.init(project=project, name=name, config=OmegaConf.to_object(config))
-            url = run.get_url()
-            extra_headers["Click"] = url
-
-        ntfy.send_notification(f"🤖Started", extra_headers=extra_headers)
-        final_text = f"🏆️ Finished"
-        exit_code = 0
-
-        yield (ntfy, run)
-    except Exception as e:
-        final_text = f"💢 Exception occurred {e}"
-        exit_code = -1
-        raise
-    finally:
-        ntfy.send_notification(final_text, extra_headers=extra_headers)
-        if run:
-            run.finish(exit_code)
+    trainer.fit(model=model, datamodule=dm)
 
 
 if __name__ == "__main__":
