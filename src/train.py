@@ -41,8 +41,8 @@ def main(config: DictConfig):
         trainer: Trainer = hydra.utils.instantiate(config.trainer)
 
         tuner = Tuner(trainer)
-        lr_finder = tuner.lr_find(model)
-        print(lr_finder.results)
+        lr_finder = tuner.lr_find(model=model, datamodule=dm)
+        print(f"{lr_finder.results=}", f"{lr_finder.suggestion()=}", sep="\n")
         new_lr = lr_finder.suggestion()
         model.hparams.lr = new_lr
 
