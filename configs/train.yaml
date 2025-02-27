@@ -12,10 +12,8 @@ run:
   hf_dataset_num_proc: 4
   force_dtype: bfloat16
   lr_find: false
+  lr: 0.0001
 
-loss_fn:
-  _target_: torch.nn.CrossEntropyLoss
-lr: 0.0001
 
 trainer:
   _target_: lightning.pytorch.trainer.trainer.Trainer

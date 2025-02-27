@@ -5,6 +5,7 @@ import lightning as L
 import torch
 from omegaconf import DictConfig
 from torch.optim import AdamW
+from transformers.loss.loss_utils import ForCausalLMLoss
 
 
 class GPT2Lightning(L.LightningModule):
@@ -16,10 +17,11 @@ class GPT2Lightning(L.LightningModule):
 
         self.model = self._init_llm()
 
-        self.lr = config.lr
+        self.lr = config.run.lr
 
         self.tokenizer = hydra.utils.instantiate(self.config.llm.tokenizer.instance)
-
+        self.vocab_size = self.tokenizer.vocab_size
+        # self.loss_fn = hydra.utils.instantiate(self.config.loss_fn)
         self.save_hyperparameters()
 
     def _init_llm(self):
@@ -27,10 +29,8 @@ class GPT2Lightning(L.LightningModule):
             hydra.utils.call(self.config.llm.from_pretrained)
             if "from_pretrained" in self.config.llm
             else hydra.utils.instantiate(self.config.llm.instance)
-        ).train()
-
-        if "loss_fn" in self.config:
-            llm.loss_function = hydra.utils.instantiate(self.config.loss_fn)
+        ).train()  # enable training mode so dropout is used
+        # llm.config.loss_type = "ForCausalLMLoss"
 
         dtype_mapping = {
             "float32": torch.float32,
@@ -62,22 +62,37 @@ class GPT2Lightning(L.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
     def forward(self, inputs: torch.LongTensor, attention_mask: torch.LongTensor = None):
-        return self.model.forward(**inputs, labels=inputs["input_ids"])
+        return self.model.forward(**inputs)
 
     def training_step(self, batch, batch_idx):
-        output = self.model.forward(**batch, labels=batch["input_ids"])
-        loss = output.loss
-        self.log("train_loss", loss)
+        logits = self.model.forward(**batch).logits
+
+        loss = ForCausalLMLoss(
+            logits=logits,
+            labels=batch["input_ids"],
+            vocab_size=self.vocab_size,
+        )
+        self.log("train/loss", loss)
         return {"loss": loss}
 
     def validation_step(self, batch, batch_idx):
-        output = self.model.forward(**batch, labels=batch["input_ids"])
-        loss = output.loss
-        self.log("val_loss", loss, sync_dist=True)  # synch for multi-gpu training
+        logits = self.model.forward(**batch).logits
+
+        loss = ForCausalLMLoss(
+            logits=logits,
+            labels=batch["input_ids"],
+            vocab_size=self.vocab_size,
+        )
+        self.log("val/loss", loss, sync_dist=True)  # synch for multi-gpu training
         return {"loss": loss}
 
     def test_step(self, batch, batch_idx):
-        output = self.model.forward(**batch, labels=batch["input_ids"])
-        loss = output.loss
-        self.log("test_loss", loss, sync_dist=True)  # synch for multi-gpu training
+        logits = self.model.forward(**batch).logits
+
+        loss = ForCausalLMLoss(
+            logits=logits,
+            labels=batch["input_ids"],
+            vocab_size=self.vocab_size,
+        )
+        self.log("test/loss", loss, sync_dist=True)  # synch for multi-gpu training
         return {"loss": loss}
