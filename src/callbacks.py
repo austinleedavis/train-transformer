@@ -4,7 +4,6 @@ from hydra.core.hydra_config import HydraConfig
 from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.loggers.wandb import WandbLogger
 
-# from lightning.pytorch.loggers.wandb
 from src.ntfy import Ntfy
 
 
