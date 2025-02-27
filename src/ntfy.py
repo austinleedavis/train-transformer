@@ -19,7 +19,7 @@ class Ntfy:
             self.logger.warning("No topic specified. Ntfy will use Logger instead.")
             self.send_notification = lambda *a, **k: self.logger.info(str((a, k)))
 
-    def send_notification(self, message):
+    def send_notification(self, message, extra_headers={}):
         """Sends a notification with the given message to the specified topic.
 
         If the topic does not start with a "/", it is prepended. Logs the result of the notification
@@ -34,9 +34,10 @@ class Ntfy:
             url = "ntfy.sh"
 
             headers = {"Content-Type": "text/plain"}
+            headers.update(extra_headers)
 
             conn = http.client.HTTPSConnection(url)
-            conn.request("POST", self.topic, message, headers)
+            conn.request("POST", self.topic, message.encode("utf-8"), headers)
             response = conn.getresponse()
             if response.status == 200:
                 self.logger.info(f"Notification sent successfully: {message}")
