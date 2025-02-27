@@ -10,6 +10,7 @@ run:
     batch_size: 5 # loader batch size
     num_workers: 4 # num workers for loader
   hf_dataset_num_proc: 4
+  force_dtype: bfloat16
 
 loss_fn:
   _target_: torch.nn.CrossEntropyLoss
@@ -30,7 +31,7 @@ trainer:
   callbacks:
     - _target_: lightning.pytorch.callbacks.EarlyStopping
       monitor: val_loss
-      mode: max
+      mode: min
     - _target_: lightning.pytorch.callbacks.OnExceptionCheckpoint
       dirpath: ${hydra:runtime.output_dir}/exception
     - _target_: lightning.pytorch.callbacks.ModelCheckpoint
