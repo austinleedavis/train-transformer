@@ -21,15 +21,15 @@ trainer:
   fast_dev_run: false
   gradient_clip_val: 0.5
   # limit_predict_batches: ???
-  # limit_test_batches: ???
   # limit_train_batches: ???
-  limit_val_batches: 2000 # number of val batches to use
+  limit_test_batches: 0.0
+  limit_val_batches: 0.0 # number of val batches to use
   max_epochs: 1
-  num_nodes: 1 # number of nodes for distributed training
-  val_check_interval: 10000
+  # num_nodes: 1 # number of nodes for distributed training
+  # val_check_interval: 10000
   callbacks:
     - _target_: lightning.pytorch.callbacks.EarlyStopping
-      monitor: val_loss
+      monitor: train/loss
       mode: min
     - _target_: lightning.pytorch.callbacks.OnExceptionCheckpoint
       dirpath: ${hydra:runtime.output_dir}/exception
