@@ -3,7 +3,7 @@ import logging
 import hydra
 import lightning as L
 import torch
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from torch.optim import AdamW
 from transformers.loss.loss_utils import ForCausalLMLoss
 
@@ -12,23 +12,23 @@ class GPT2Lightning(L.LightningModule):
 
     def __init__(self, config: DictConfig):
         super().__init__()
-        self.config = config
+        self.cfg = config
+        self.config = OmegaConf.to_container(config)
         self.automatic_optimization = True
 
         self.model = self._init_llm()
 
-        self.lr = config.run.lr
+        self.lr = self.cfg.run.lr
 
-        self.tokenizer = hydra.utils.instantiate(self.config.llm.tokenizer.instance)
+        self.tokenizer = hydra.utils.instantiate(self.cfg.llm.tokenizer.instance)
         self.vocab_size = self.tokenizer.vocab_size
-        # self.loss_fn = hydra.utils.instantiate(self.config.loss_fn)
         self.save_hyperparameters()
 
     def _init_llm(self):
         llm = (
-            hydra.utils.call(self.config.llm.from_pretrained)
-            if "from_pretrained" in self.config.llm
-            else hydra.utils.instantiate(self.config.llm.instance)
+            hydra.utils.call(self.cfg.llm.from_pretrained)
+            if "from_pretrained" in self.cfg.llm
+            else hydra.utils.instantiate(self.cfg.llm.instance)
         ).train()  # enable training mode so dropout is used
         # llm.config.loss_type = "ForCausalLMLoss"
 
@@ -40,7 +40,7 @@ class GPT2Lightning(L.LightningModule):
             "bfloat16": torch.bfloat16,
         }
         llm_dtype = llm.config.torch_dtype
-        train_dtype = self.config.run.get("force_dtype", llm_dtype)
+        train_dtype = self.cfg.run.get("force_dtype", llm_dtype)
 
         # oddly, the LLM in not loaded to the correct dtype automatically
         llm.to(dtype_mapping[train_dtype])
@@ -48,8 +48,8 @@ class GPT2Lightning(L.LightningModule):
         # print(llm)
         print(f"LLM dtype set to {train_dtype}.")
 
-        if "compile" in self.config:
-            options = self.config.compile.options
+        if "compile" in self.cfg:
+            options = self.cfg.compile.options
             llm = torch.compile(llm, options=options)
 
         return llm

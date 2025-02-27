@@ -4,6 +4,7 @@ from hydra.core.hydra_config import HydraConfig
 from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.loggers.wandb import WandbLogger
 
+from src.gpt_module import GPT2Lightning
 from src.ntfy import Ntfy
 
 
@@ -15,53 +16,32 @@ class NtfyCallback(Callback):
 
     def setup(self, trainer, pl_module, stage):
         if trainer.global_rank == 0:
-            hc = HydraConfig.get()
-            project = pl_module.config.run.project
-            name = "/".join(hc.run.dir.split("/")[1:])
-            extra_headers = {"Title": f"{project} {name}"}
-
-            for logger in trainer.loggers:
-                if isinstance(logger, WandbLogger):
-                    run = logger.experiment
-                    url = run.get_url()
-                    extra_headers["Click"] = url
-                    break
-
+            extra_headers = self.get_extra_headers(trainer, pl_module)
             self.ntfy.send_notification(f"🤖 {stage} started", extra_headers=extra_headers)
 
     def teardown(self, trainer, pl_module, stage):
         if trainer.global_rank == 0:
-            hc = HydraConfig.get()
-            project = pl_module.config.run.project
-            name = "/".join(hc.run.dir.split("/")[1:])
-            extra_headers = {"Title": f"{project} {name}"}
-
-            for logger in trainer.loggers:
-                if isinstance(logger, WandbLogger):
-                    run = logger.experiment
-                    url = run.get_url()
-                    extra_headers["Click"] = url
-                    break
-
+            extra_headers = self.get_extra_headers(trainer, pl_module)
             self.ntfy.send_notification(f"🏆️ {stage} finished", extra_headers=extra_headers)
 
     def on_exception(self, trainer, pl_module, exception):
         if trainer.global_rank == 0:
-            hc = HydraConfig.get()
-            project = pl_module.config.run.project
-            name = "/".join(hc.run.dir.split("/")[1:])
-            extra_headers = {"Title": f"{project} {name}"}
-
-            for logger in trainer.loggers:
-                if isinstance(logger, WandbLogger):
-                    run = logger.experiment
-                    url = run.get_url()
-                    extra_headers["Click"] = url
-                    break
-
+            extra_headers = self.get_extra_headers(trainer, pl_module)
             e = "Keyboard interrupt" if isinstance(exception, KeyboardInterrupt) else str(exception)
-
             self.ntfy.send_notification(f"💢 Exception: {e}", extra_headers=extra_headers)
+
+    def get_extra_headers(self, trainer, pl_module):
+        hc = HydraConfig.get()
+        project = pl_module.cfg.run.project
+        name = "/".join(hc.run.dir.split("/")[1:])
+        extra_headers = {"Title": f"{project} {name}"}
+
+        for logger in trainer.loggers:
+            if isinstance(logger, WandbLogger):
+                run = logger.experiment
+                url = run.get_url()
+                extra_headers["Click"] = url
+                return extra_headers
 
 
 # @contextmanager

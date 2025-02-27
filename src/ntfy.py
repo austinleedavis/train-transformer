@@ -38,13 +38,13 @@ class Ntfy:
 
             conn = http.client.HTTPSConnection(url)
             conn.request("POST", self.topic, message.encode("utf-8"), headers)
-            response = conn.getresponse()
-            if response.status == 200:
-                self.logger.info(f"Notification sent successfully: {message}")
-            else:
-                self.logger.info(
-                    f"Failed to send notification. Status code: {response.status}, Reason: {response.reason}, Message: {message}"
-                )
+            # response = conn.getresponse()
+            # if response.status == 200:
+            #     self.logger.info(f"Notification sent successfully: {message}")
+            # else:
+            #     self.logger.info(
+            #         f"Failed to send notification. Status code: {response.status}, Reason: {response.reason}, Message: {message}"
+            #     )
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
