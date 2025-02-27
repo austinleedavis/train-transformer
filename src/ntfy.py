@@ -1,6 +1,6 @@
 import http.client
+import json
 import logging
-from contextlib import contextmanager
 
 
 class Ntfy:
@@ -38,21 +38,41 @@ class Ntfy:
 
             conn = http.client.HTTPSConnection(url)
             conn.request("POST", self.topic, message.encode("utf-8"), headers)
-            # response = conn.getresponse()
-            # if response.status == 200:
-            #     self.logger.info(f"Notification sent successfully: {message}")
-            # else:
-            #     self.logger.info(
-            #         f"Failed to send notification. Status code: {response.status}, Reason: {response.reason}, Message: {message}"
-            #     )
+            response = conn.getresponse()
+            if response.status == 200:
+                self.logger.info(f"Notification sent successfully: {message}")
+            else:
+                self.logger.info(
+                    f"Failed to send notification. Status code: {response.status}, Reason: {response.reason}, Message: {message}"
+                )
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
             # Ensure the connection is closed
             conn.close()
 
-    @contextmanager
-    def context(self, desc=""):
-        self.send_notification(f"Entered: {desc}")
-        yield
-        self.send_notification(f"Exited: {desc}")
+    def subscribe(self, callback):
+        """Subscribes to the Ntfy topic and invokes callback when a message is received."""
+        if not self.topic:
+            return
+
+        if self.topic[0] != "/":
+            self.topic = "/" + self.topic
+
+        url = "ntfy.sh"
+        conn = http.client.HTTPSConnection(url)
+
+        try:
+            conn.request("GET", self.topic + "/json")
+            response = conn.getresponse()
+            for line in response:
+                try:
+                    data = json.loads(line)
+                    if "message" in data:
+                        callback(data["message"])
+                except json.JSONDecodeError:
+                    continue
+        except Exception as e:
+            self.logger.error(f"Subscription error: {e}")
+        finally:
+            conn.close()
