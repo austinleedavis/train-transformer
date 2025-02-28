@@ -41,7 +41,11 @@ class LichessDataModule(LightningDataModule):
 
         assert len(dataset["train"]) > 0
 
-        dataset.save_to_disk(self.save_to, max_shard_size="50MB")
+        dataset.save_to_disk(
+            self.save_to,
+            max_shard_size="50MB",
+            num_proc=self.config.run.hf_dataset_num_proc,
+        )
 
     def setup(self, stage: str = None):
         if not self.hf_dataset:
