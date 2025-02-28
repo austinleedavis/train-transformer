@@ -184,13 +184,13 @@ Instead, my job is typically not considered "high-priority", and I must wait min
 When the job does start, I want to know ASAP so I can monitor progress and quickly re-submit a job if it failed.
 This is why I integrated the NtfyCallback into my training scripts.
 
-If you set the `NTFY_TOPIC` environment variable, the training script will send a notification to that topic when training starts, stops, or when an error occurs. 
-Additionally, if you use the Weights and Biases logger, the notification will include the URL to the wandb run. 
+If you set the `NTFY_TOPIC` environment variable, the training script will send a notification to that topic when training starts, stops, or when an error occurs. (See the examples below.) Additionally, if you use the Weights and Biases logger, clicking the notification will include the URL to the wandb run. 
+
+<center><i>Start, Finish, and Error notifications received on the Android app.</i><br><img src="ntfy.png" alt="Ntfy" height="300"/></center>
 
 You can also interrupt the training process at any time using Ntfy as a sort of manual form of early stopping. 
 When training begins, the NtfyCallback spins-up a thread and subscribes to your NTFY_TOPIC.
-To stop a run at any moment, send "stopit" to your NTFY_TOPIC (e.g., via your phone or the desktop interface), and the monitoring thread will signal to Pytorch Lightning that it should stop the training process.
-
+To stop a run at any moment, send the `hh-mm-ss` timestamp from the run name (e.g., "16-29-15" in the image above) to your NTFY_TOPIC via your phone or the desktop interface, and the monitoring thread will signal to Pytorch Lightning that it should stop the training process.
 
 ## Notes
 
