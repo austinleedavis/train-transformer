@@ -178,6 +178,20 @@ HYDRA_CONFIG_PATH=configs # the path to your hydra configurations. (Best practic
 └── requirements.txt
 ```
 
+## Using Ntfy
+**Motivation**: Training is a peculiar thing. Sometimes it goes great, and sometimes it doesn't. Unfortunately, when deploying jobs to a compute cluster, I'm rarely sitting at the terminal monitoring training progress. 
+Instead, my job is typically not considered "high-priority", and I must wait minutes or hours before it starts.
+When the job does start, I want to know ASAP so I can monitor progress and quickly re-submit a job if it failed.
+This is why I integrated the NtfyCallback into my training scripts.
+
+If you set the `NTFY_TOPIC` environment variable, the training script will send a notification to that topic when training starts, stops, or when an error occurs. 
+Additionally, if you use the Weights and Biases logger, the notification will include the URL to the wandb run. 
+
+You can also interrupt the training process at any time using Ntfy as a sort of manual form of early stopping. 
+When training begins, the NtfyCallback spins-up a thread and subscribes to your NTFY_TOPIC.
+To stop a run at any moment, send "stopit" to your NTFY_TOPIC (e.g., via your phone or the desktop interface), and the monitoring thread will signal to Pytorch Lightning that it should stop the training process.
+
+
 ## Notes
 
 - **Configurations**: Modify `configs/train.yaml` to adjust training settings and paths.
