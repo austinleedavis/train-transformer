@@ -35,27 +35,6 @@ def get_board_position_change_indices(
     return split_indicies
 
 
-def get_token_phases(transcript_token_ids: list[int]) -> list[int]:
-    """Generates a list of phases corresponding to the given transcript token IDs.
-
-    Args:
-        transcript_token_ids (list[int]): A list of token IDs representing a chess game transcript.
-
-    Returns:
-        list[int]: A list of phases corresponding to each token ID in the input list.
-    """
-    phases = MOVE_PHASES[:4] * math.ceil(len(transcript_token_ids) / 4)
-
-    for i, tok in enumerate(transcript_token_ids):
-        if tok > 67:
-            phases.insert(i, PROMOTE)
-        elif tok < 4:
-            phases.insert(i, SPECIAL)
-
-    phases = phases[: len(transcript_token_ids)]
-    return phases
-
-
 def uci_to_board(
     uci_moves: Union[str, Iterable],
     *,

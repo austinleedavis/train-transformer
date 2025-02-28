@@ -21,4 +21,4 @@ python src/train.py
 exit
 zzzRunHEREinTheContainer
 
-scancel $SLURM_JOB_ID
+scancel "$SLURM_JOB_ID"
