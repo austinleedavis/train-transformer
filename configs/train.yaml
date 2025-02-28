@@ -1,7 +1,7 @@
 defaults:
-  - dataset: lichess-uci-202302
-  - llm: chessGPT_d12
-  - compile: no_options
+  - dataset: lichess-pgn-elite-promotions
+  - llm: pgn-gpt2-untrained
+  # - compile: no_options
 
 run:
   project: train_transformer

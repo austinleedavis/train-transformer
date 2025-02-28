@@ -1,0 +1,12 @@
+save_to: data/lichess-pgn-elite-promotions
+
+load_dataset:
+  _target_: datasets.load_dataset
+  path: austindavis/lichess-pgn-elite-promotions
+  split: train
+  cache_dir: data/cache
+  num_proc: ${run.hf_dataset_num_proc}
+transforms:
+  - type: train_test_split
+    kwargs:
+      test_size: 0.01

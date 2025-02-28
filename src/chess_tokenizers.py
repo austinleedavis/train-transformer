@@ -472,11 +472,12 @@ class PgnCharTokenizer(ChessTokenizer):
         super().__init__(
             self.stoi,
             self.itos,
-            pad_token="",
+            pad_token=" ",
             unk_token="",
             bos_token=";",
-            eos_token="",
+            eos_token="#",
             bos_token_id=self.stoi[";"],
+            eos_token_id=self.stoi["#"],
             name_or_path="austindavis/pgn_char_tokenizer",
         )
 
@@ -491,7 +492,6 @@ class PgnCharTokenizer(ChessTokenizer):
         return pre_tokenizer
 
     def _process_str_tokens(self, token_str):
-        print(token_str)
         return "".join(token_str)
 
 

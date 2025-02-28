@@ -1,4 +1,3 @@
-import logging
 import os
 
 import hydra
@@ -47,7 +46,7 @@ class LichessDataModule(LightningDataModule):
     def setup(self, stage: str = None):
         if not self.hf_dataset:
             self.hf_dataset = load_from_disk(self.save_to)
-            self.hf_dataset = self.hf_dataset.select_columns("input_ids").with_format("torch")
+            # self.hf_dataset = self.hf_dataset.select_columns("input_ids").with_format("torch")
             self.train_split = self.hf_dataset["train"]
             self.val_split = self.hf_dataset["test"]
 
@@ -88,14 +87,16 @@ class SimpleDataCollator:
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def __call__(self, batch):
-        """Pads input_ids to the max length of the sequence or the max length of the model,
-        whichever is lesser.
-
-        batch (list[dict[str, torch.Tensor]]): Batch inputs have a single key: "input_ids". When
-        padding is applied, "attention_mask" is added.
-        """
-
-        padded = self.tokenizer.pad(batch)  # resulting keys: ['input_ids', 'attention_mask']
-        truncated = {k: v[..., : self.max_length] for (k, v) in padded.items()}
-        return truncated
+    def __call__(self, batch_text_or_text_pairs: list[str]):
+        texts = [b["text"].split("{")[0] for b in batch_text_or_text_pairs]
+        try:
+            encoding = self.tokenizer.batch_encode_plus(
+                batch_text_or_text_pairs=texts,
+                padding=True,
+                truncation=True,
+                max_length=self.max_length,
+                return_tensors="pt",
+            )
+        except Exception as ex:
+            print(texts)
+        return encoding

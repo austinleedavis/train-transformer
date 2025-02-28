@@ -10,7 +10,6 @@ load_dataset:
   # data_files: data/202302/train-*
   num_proc: ${run.hf_dataset_num_proc}
 transforms:
-  # This month's data does not include Elo ratings (they are all zero?!)
   - type: filter
     callable: "lambda w,b: w and b and w>1500 and b>1500"
     kwargs:
@@ -39,8 +38,3 @@ transforms:
   - type: train_test_split
     kwargs:
       test_size: 0.01
-  - type: map
-    callable: "lambda ex: self.tokenizer(ex['text'])"
-    kwargs:
-      desc: "Tokenize"
-      num_proc: ${run.hf_dataset_num_proc}

@@ -1,5 +1,3 @@
-import logging
-
 import hydra
 import lightning as L
 import torch
