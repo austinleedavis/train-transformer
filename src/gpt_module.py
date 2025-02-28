@@ -38,8 +38,8 @@ class GPT2Lightning(L.LightningModule):
             "bfloat16": torch.bfloat16,
         }
         llm_dtype = llm.config.torch_dtype
-        
-        if forced_dtype := self.cfg.run.get("force_dtype", None)
+
+        if forced_dtype := self.cfg.run.get("force_dtype", None):
             llm_dtype = dtype_mapping[forced_dtype]
 
         # oddly, the LLM in not loaded to the correct dtype automatically
