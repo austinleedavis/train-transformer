@@ -1,28 +1,3 @@
-```sh
-salloc --time=24:00:00 --constraint=h100 --exclusive
-# or
-salloc --time=24:00:00 --exclusive --partition=highgpu
-salloc --time=24:00:00 --nodes=1 --gres=gpu:8 --cpus-per-task=48 --partition=highgpu
-ssh evc104
-
-
-# ssh to the correct node
-mkdir containers
-
-cd ~/containers/
-module load apptainer
-module load cuda/cuda-12.4.0
-# apptainer pull docker://austindavis/train-transformer
-apptainer run --nv ~/containers/train-transformer_latest.sif
-nvidia-smi
-
-cd ~/git/train-trainsformer
-python src/train.py
-# python src/train.py --config-name find_batch_size
-
-# edit the batch size accordingly
-```
-
 # Train Transformers
 
 
