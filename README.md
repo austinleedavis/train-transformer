@@ -1,7 +1,7 @@
 # Train Transformers
 
 
-## 🛠 Key Features
+## Key Features
 
 This repository is used to train a chess-playing transformer on UCI move sequences. It provides some very nice features:
 - **Automated setup** with Makefile
@@ -12,7 +12,7 @@ This repository is used to train a chess-playing transformer on UCI move sequenc
 - **Start/stop/error notifications** via [Ntfy.sh](https://ntfy.sh/), plus the ability to interrupt training remotely via notify.sh
 
 
-## 📋 Prerequisites
+## Prerequisites
 
 1. [GNU Make](https://www.gnu.org/software/make/) (shortcut command for building/running the container)
 1. Docker Engine ([Installation Guide](https://docs.docker.com/engine/install/)): Follow installation steps for your Linux distribution, or use [Docker Desktop](https://docs.docker.com/desktop/) for Windows
@@ -52,7 +52,7 @@ On my system, I have a lot of free space at `/home`, but very little in docker's
 - [Pytorch compatibility matrix](https://github.com/pytorch/pytorch/blob/main/RELEASE.md)
 - [Official NVIDIA/CUDA docker images](https://hub.docker.com/r/nvidia/cuda/tags)
 
-## 🚀 Installation
+## Installation
 
    1. **Clone the Repository**
       First, clone the repository into your desired project directory:
@@ -72,7 +72,7 @@ On my system, I have a lot of free space at `/home`, but very little in docker's
       Once the build completes, you have multiple options for accessing the environment.
 
 
-### 🛠 Accessing the Development Environment
+### Accessing the Development Environment
 Post-build, there are three options to access the development environment.
 
 #### Option 1: ***VS Code DevContainer***
@@ -161,7 +161,7 @@ NTFY_TOPIC=<your_topic_here> # the topic to which you will publish/subscribe not
 HYDRA_CONFIG_PATH=configs # the path to your hydra configurations. (Best practice: use a config folder outside the git repository)
 ```
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 .
@@ -178,7 +178,7 @@ HYDRA_CONFIG_PATH=configs # the path to your hydra configurations. (Best practic
 └── requirements.txt
 ```
 
-## 📝 Notes
+## Notes
 
 - **Configurations**: Modify `configs/train.yaml` to adjust training settings and paths.
 - **Logs & Checkpoints**: Stored in `outputs/` folder organized by date/time of each run.
