@@ -50,13 +50,13 @@ class LichessDataModule(LightningDataModule):
     def setup(self, stage: str = None):
         if not self.hf_dataset:
             self.hf_dataset = load_from_disk(self.save_to)
-            # self.hf_dataset = self.hf_dataset.select_columns("input_ids").with_format("torch")
             self.train_split = self.hf_dataset["train"]
             self.val_split = self.hf_dataset["test"]
 
     def train_dataloader(self):
         loader = DataLoader(
             self.train_split,
+            shuffle=True,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             collate_fn=SimpleDataCollator(self.tokenizer),
@@ -92,7 +92,7 @@ class SimpleDataCollator:
         self.max_length = max_length
 
     def __call__(self, batch_text_or_text_pairs: list[str]):
-        texts = [b["text"].split("{")[0] for b in batch_text_or_text_pairs]
+        texts = [b["text"] for b in batch_text_or_text_pairs]
         try:
             encoding = self.tokenizer.batch_encode_plus(
                 batch_text_or_text_pairs=texts,
