@@ -1,0 +1,13 @@
+save_to: data/lichess-uci-elite
+is_upper: true
+
+load_dataset:
+  _target_: datasets.load_dataset
+  path: austindavis/lichess-elite-uci
+  split: train
+  cache_dir: data/cache
+  num_proc: ${run.hf_dataset_num_proc}
+transforms:
+  - type: train_test_split
+    kwargs:
+      test_size: 0.01

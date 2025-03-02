@@ -1,6 +1,6 @@
 defaults:
-  - dataset: lichess-pgn-elite-promotions
-  - llm: pgn-gpt2-untrained
+  - dataset: lichess-uci-elite
+  - llm: chessGPT_d12_1500
   # - compile: no_options
 
 run:
