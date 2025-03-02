@@ -12,6 +12,7 @@ class DatasetProcessor:
     - "rename_columns": Rename columns from the dataset
     - "filter": Apply a filtering function to remove records based on conditions.
     - "map": Apply a transformation function to modify records in the dataset.
+    - "shuffle": Shuffle the dataset.
 
     Attributes:
         SUPPORTED_TRANSFORM_TYPES (list): A list of supported transformation types.
@@ -25,6 +26,7 @@ class DatasetProcessor:
         SELECT_COLUMNS,
         SELECT,
         TRAIN_TEST_SPLIT,
+        SHUFFLE,
     ] = [
         "filter",
         "map",
@@ -32,6 +34,7 @@ class DatasetProcessor:
         "select_columns",
         "select",
         "train_test_split",
+        "shuffle",
     ]
 
     transforms: Iterable[Mapping]
@@ -110,5 +113,7 @@ class DatasetProcessor:
                     dataset = dataset.map(map_fn, **kwargs)
                 case self.TRAIN_TEST_SPLIT:
                     dataset = dataset.train_test_split(**kwargs)
+                case self.SHUFFLE:
+                    dataset = dataset.shuffle(**kwargs)
 
         return dataset
