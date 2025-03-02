@@ -108,12 +108,10 @@ class ChessTokenizer(PreTrainedTokenizerFast):
 class UciTileTokenizer(ChessTokenizer):
     """Uci tokenizer converting start/end tiles and promotion types each into individual tokens."""
 
-    PLAYER_BY_INDICES = [True, False] * 1024
-
     SPECIAL_TOKENS = (_PAD_TOKEN, _BOS_TOKEN, _EOS_TOKEN, _UNK_TOKEN) = [
         "<|pad|>",
         "<|startoftext|>",
-        "<|endoftext|>",
+        "#",  # EOS token
         "<|unknown|>",
     ]
 
@@ -197,24 +195,33 @@ class UciTileTokenizer(ChessTokenizer):
     def _process_str_tokens(self, token_str: list[str]):
         moves = []
         next_move = ""
+        next_move_sans_specials = ""
         for token in token_str:
 
             # skip special tokens
-            if token in self.all_special_tokens:
+            if token in [self._PAD_TOKEN, self._BOS_TOKEN, self._UNK_TOKEN]:
+                continue
+
+            if token == self._EOS_TOKEN:
+                next_move += token
                 continue
 
             # handle promotions
             if len(token) == 1:
+                next_move_sans_specials
                 next_move += token
+                next_move_sans_specials += token
                 continue
 
             # handle regular tokens if there's room
-            if len(next_move) < 4:
+            if len(next_move_sans_specials) < 4:
                 next_move += token
+                next_move_sans_specials += token
                 continue
 
             moves.append(next_move)
             next_move = token
+            next_move_sans_specials = token
 
         moves.append(next_move)
         return " ".join(moves)
