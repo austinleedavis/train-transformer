@@ -11,7 +11,6 @@ class GPT2Lightning(L.LightningModule):
     def __init__(self, config: DictConfig):
         super().__init__()
         self.cfg = config
-        self.config = OmegaConf.to_container(config)
         self.automatic_optimization = True
 
         self.model = self._init_llm()
@@ -20,7 +19,8 @@ class GPT2Lightning(L.LightningModule):
 
         self.tokenizer = hydra.utils.instantiate(self.cfg.llm.tokenizer.instance)
         self.vocab_size = self.tokenizer.vocab_size
-        self.save_hyperparameters()
+        self.save_hyperparameters(OmegaConf.to_container(config))
+        self._log_hyperparams
 
     def _init_llm(self):
         llm = (
