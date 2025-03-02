@@ -39,6 +39,9 @@ class GPT2Lightning(L.LightningModule):
         }
         llm_dtype = llm.config.torch_dtype
 
+        if llm_dtype in dtype_mapping.keys():
+            llm_dtype = dtype_mapping[forced_dtype]
+
         if forced_dtype := self.cfg.run.get("force_dtype", None):
             llm_dtype = dtype_mapping[forced_dtype]
 
