@@ -26,7 +26,7 @@ class NtfyCallback(Callback):
             trainer.should_stop = True
 
     def handle_message(self, message):
-        if message.strip().lower().split() == self.run_name:
+        if message.strip().lower().strip() == self.run_name:
             self._stop_training = True
 
     def setup(self, trainer, pl_module, stage):
