@@ -39,6 +39,8 @@ trainer:
         minutes: 30.0
       save_top_k: 1
     - _target_: src.callbacks.NtfyCallback
+    - _target_: lightning.pytorch.callbacks.StochasticWeightAveraging
+      swa_lrs: 1e-2
   logger:
     - _target_: lightning.pytorch.loggers.WandbLogger
       name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
