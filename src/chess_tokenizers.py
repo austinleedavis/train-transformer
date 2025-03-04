@@ -1,7 +1,9 @@
-from typing import List, MutableMapping, Tuple, Union
+from typing import Iterable, List, MutableMapping, Tuple, Union
 
 import chess
+import regex as re
 import tokenizers
+import torch
 from tokenizers import models, pre_tokenizers, processors
 from torch import Tensor as TT
 from transformers import PreTrainedTokenizerFast
@@ -103,6 +105,111 @@ class ChessTokenizer(PreTrainedTokenizerFast):
 
     def get_id2square_list() -> list[int]:
         raise NotImplementedError
+
+
+class StructuredUciTileTokenizer:
+    uci_pattern: re.Pattern
+    stoi: dict[str, int]
+    itos: dict[int, str]
+
+    SPECIAL_TOKENS = (_PAD_TOKEN, _BOS_TOKEN, _EOS_TOKEN, _UNK_TOKEN) = [
+        "<|pad|>",
+        "<|startoftext|>",
+        "<|endoftext|>",
+        "<|unknown|>",
+    ]
+
+    def __init__(self, *, upper_promotions):
+
+        if upper_promotions:
+            self._promote_chars = "QRBN"
+        else:
+            self._promote_chars = "qrbn"
+
+        self.uci_pattern = re.compile(
+            r"^(?P<from>[a-h][1-8])(?P<to>[a-h][1-8])(?P<promotion>["
+            + self._promote_chars
+            + r"])?(?P<check>[+#])?$"
+        )
+
+        tokens = (
+            self.SPECIAL_TOKENS
+            + chess.SQUARE_NAMES
+            + ["~"]  # no promote token
+            + list(self._promote_chars)
+            + list("-+#")  # no_check, check, checkmate
+        )
+        self.stoi = {tok: idx for tok, idx in list(zip(tokens, range(len(tokens))))}
+        self.itos = {idx: tok for tok, idx in list(zip(tokens, range(len(tokens))))}
+
+    def pre_tokenize_str(self, sequence: str) -> list[list[tuple[str, tuple[int, int]]]]:
+        moves = sequence.split()  # Split moves on whitespace
+        parsed_moves = []
+
+        start_idx = 0  # Track character index in the original sequence
+        for move in moves:
+            match = self.uci_pattern.match(move)
+            if not match:
+                raise ValueError(f"Invalid UCI move: {move}")
+
+            # Extract components and assign placeholders where needed
+            from_square = match.group("from")
+            to_square = match.group("to")
+            promotion = match.group("promotion") or "~"
+            check = match.group("check") or "-"
+
+            components = [
+                (from_square, (start_idx, start_idx + 2)),
+                (to_square, (start_idx + 2, start_idx + 4)),
+                (
+                    promotion,
+                    (
+                        (start_idx + 4, start_idx + 5)
+                        if match.group("promotion")
+                        else (start_idx + 4, start_idx + 4)
+                    ),
+                ),
+                (
+                    check,
+                    (
+                        (start_idx + 5, start_idx + 6)
+                        if match.group("check")
+                        else (start_idx + 5, start_idx + 5)
+                    ),
+                ),
+            ]
+
+            parsed_moves.extend(components)
+            start_idx += len(move) + 1  # Move past this move + whitespace
+
+        return parsed_moves
+
+    def encode(self, batch_or_sequence: Union[str, Iterable[str]], return_tensors: bool = True):
+        if not isinstance(batch_or_sequence, str):
+            return [
+                torch.tensor(
+                    [self.stoi.get(t[0], self._UNK_TOKEN) for t in self.pre_tokenize_str(s)],
+                    dtype=torch.long,
+                )
+                for s in batch_or_sequence
+            ]
+
+        parsed_tokens = self.pre_tokenize_str(batch_or_sequence)
+        return [self.stoi[t[0]] for t in parsed_tokens]
+
+    def _join_in_groups(self, L):
+        grouped = ["".join(L[i : i + 4]) for i in range(0, len(L), 4)]
+        return " ".join(grouped)
+
+    def decode(self, encoding: Union[Iterable[int], Iterable[Iterable[int]]]):
+        if isinstance(encoding[0], int) or (
+            isinstance(encoding, torch.Tensor) and len(encoding.shape) <= 1
+        ):  # base case
+            return self._join_in_groups(
+                [self.itos.get(int(i), self._UNK_TOKEN) for i in encoding if i]
+            )
+        else:
+            return [self.decode(e) for e in encoding]
 
 
 class UciTileTokenizer(ChessTokenizer):
