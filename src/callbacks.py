@@ -47,7 +47,7 @@ class NtfyCallback(Callback):
 
     def get_extra_headers(self, trainer, pl_module):
         hc = HydraConfig.get()
-        project = pl_module.cfg.run.project
+        project = pl_module.config.run.project
         name = "/".join(hc.run.dir.split("/")[1:])
         extra_headers = {"Title": f"{project} {name}"}
         self.run_name = name.split("/")[-1]
