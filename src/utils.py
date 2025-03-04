@@ -35,6 +35,21 @@ def get_board_position_change_indices(
     return split_indicies
 
 
+def truncate_illegal_moves(uci_moves: Union[str, Iterable[str]]) -> tuple[str, int]:
+    if isinstance(uci_moves, str):
+        uci_moves = uci_moves.split(" ")
+
+    board = chess.Board()
+    for i, move in enumerate(uci_moves):
+        try:
+            move_obj = board.parse_uci(move.lower())
+        except Exception as e:
+            return " ".join(uci_moves[:i]), i, move
+        board.push(move_obj)
+
+    return " ".join(uci_moves[: i + 1]), i + 1, ""
+
+
 def uci_to_board(
     uci_moves: Union[str, Iterable],
     *,
