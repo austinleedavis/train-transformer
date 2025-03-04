@@ -1,6 +1,7 @@
 import hydra
 import lightning as L
 import torch
+from lightning.pytorch.loggers.wandb import WandbLogger
 from omegaconf import DictConfig, OmegaConf
 from torch.optim import AdamW
 from transformers.loss.loss_utils import ForCausalLMLoss
@@ -8,25 +9,29 @@ from transformers.loss.loss_utils import ForCausalLMLoss
 
 class GPT2Lightning(L.LightningModule):
 
+    config: DictConfig
+
     def __init__(self, config: DictConfig):
         super().__init__()
-        self.cfg = config
+        self.config = config
         self.automatic_optimization = True
 
         self.model = self._init_llm()
 
-        self.lr = self.cfg.run.lr
+        self.lr = self.config.run.lr
 
-        self.tokenizer = hydra.utils.instantiate(self.cfg.llm.tokenizer.instance)
+        self.tokenizer = hydra.utils.instantiate(self.config.llm.tokenizer.instance)
         self.vocab_size = self.tokenizer.vocab_size
-        self.save_hyperparameters(OmegaConf.to_container(config))
-        self._log_hyperparams
+        self.save_hyperparameters(logger=False)
+
+    def setup(self, stage):
+        self.trainer.logger.log_hyperparams(OmegaConf.to_container(self.config))
 
     def _init_llm(self):
         llm = (
-            hydra.utils.call(self.cfg.llm.from_pretrained)
-            if "from_pretrained" in self.cfg.llm
-            else hydra.utils.instantiate(self.cfg.llm.instance)
+            hydra.utils.call(self.config.llm.from_pretrained)
+            if "from_pretrained" in self.config.llm
+            else hydra.utils.instantiate(self.config.llm.instance)
         ).train()  # enable training mode so dropout is used
         # llm.config.loss_type = "ForCausalLMLoss"
 
@@ -42,15 +47,15 @@ class GPT2Lightning(L.LightningModule):
         if llm_dtype in dtype_mapping.keys():
             llm_dtype = dtype_mapping[llm_dtype]
 
-        if forced_dtype := self.cfg.run.get("force_dtype", None):
+        if forced_dtype := self.config.run.get("force_dtype", None):
             llm_dtype = dtype_mapping[forced_dtype]
 
         # oddly, the LLM in not loaded to the correct dtype automatically
         llm.to(llm_dtype)
         print(f"LLM dtype set to {llm_dtype}.")
 
-        if "compile" in self.cfg:
-            options = self.cfg.compile.options
+        if "compile" in self.config:
+            options = self.config.compile.options
             llm = torch.compile(llm, options=options)
 
         return llm
