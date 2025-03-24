@@ -1,6 +1,6 @@
 defaults:
-  - dataset: lichess-uci-elite
-  - llm: chessGPT_d12_1500
+  - dataset: lichess-uci-202302
+  - llm: chessGPT_d12_structured
   # - compile: no_options
 
 run:
@@ -42,11 +42,11 @@ trainer:
     - _target_: lightning.pytorch.callbacks.StochasticWeightAveraging
       swa_lrs: 1e-2
   logger:
-    - _target_: lightning.pytorch.loggers.WandbLogger
-      name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
-      project: ${hydra:job.name}
-      log_model: false
-      checkpoint_name: null
+    # - _target_: lightning.pytorch.loggers.WandbLogger
+    #   name: ${now:%Y-%m-%d}/${now:%H-%M-%S}
+    #   project: ${hydra:job.name}
+    #   log_model: false
+    #   checkpoint_name: null
     - _target_: lightning.pytorch.loggers.CSVLogger
       save_dir: ${hydra:runtime.output_dir}
       name: lightning_logs
@@ -56,5 +56,37 @@ trainer:
 
 hydra:
   job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s]: %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        level: INFO
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        level: 19
+        filename: ${hydra.runtime.output_dir}/job_debug.log
+        mode: w
     root:
+      handlers: [console, file]
+      level: 19
+
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s]: %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        level: INFO
+        stream: ext://sys.stdout
+    root:
+      handlers: [console]
       level: INFO
