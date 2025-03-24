@@ -32,7 +32,10 @@ class NtfyCallback(Callback):
     def setup(self, trainer, pl_module, stage):
         if trainer.global_rank == 0:
             extra_headers = self.get_extra_headers(trainer, pl_module)
-            self.ntfy.send_notification(f"🤖 {stage} started", extra_headers=extra_headers)
+            self.ntfy.send_notification(
+                f"🤖 {stage.split()[-1]} started. Respond with {self.run_name} to stop run.",
+                extra_headers=extra_headers,
+            )
 
     def teardown(self, trainer, pl_module, stage):
         if trainer.global_rank == 0:
@@ -57,3 +60,4 @@ class NtfyCallback(Callback):
                 url = run.get_url()
                 extra_headers["Click"] = url
                 return extra_headers
+        return extra_headers
