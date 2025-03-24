@@ -1,15 +1,21 @@
+import logging
+
 import hydra
 import lightning as L
 import torch
 from lightning.pytorch.loggers.wandb import WandbLogger
 from omegaconf import DictConfig, OmegaConf
 from torch.optim import AdamW
+from transformers import PreTrainedTokenizerFast
 from transformers.loss.loss_utils import ForCausalLMLoss
+
+logger = logging.getLogger(__name__)
 
 
 class GPT2Lightning(L.LightningModule):
 
     config: DictConfig
+    tokenizer: PreTrainedTokenizerFast
 
     def __init__(self, config: DictConfig):
         super().__init__()
@@ -79,6 +85,13 @@ class GPT2Lightning(L.LightningModule):
             vocab_size=self.vocab_size,
         )
         self.log("train/loss", loss)
+
+        if batch_idx % 500:
+            input = self.tokenizer.decode(batch["input_ids"][0])
+            logger.log(19, f"{input=}")
+            output = self.tokenizer.decode(logits.argmax(-1)[0])
+            logger.log(19, f"{output=}")
+
         return {"loss": loss}
 
     def validation_step(self, batch, batch_idx):
