@@ -10,6 +10,7 @@ lightning # pytorch lightning for training
 datasets
 transformers
 transformers[torch]
+git+https://github.com/austinleedavis/tokenizers.git#subdirectory=bindings/python
 
 # --------- hydra --------- #
 hydra-core
