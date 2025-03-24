@@ -135,9 +135,9 @@ class StructuredUciTileTokenizer:
         tokens = (
             self.SPECIAL_TOKENS
             + chess.SQUARE_NAMES
-            + ["~"]  # no promote token
             + list(self._promote_chars)
-            + list("-+#")  # no_check, check, checkmate
+            + ["~"]  # the no promote token
+            + list("-+#")  # the no_check, check, and checkmate tokens
         )
         self.stoi = {tok: idx for tok, idx in list(zip(tokens, range(len(tokens))))}
         self.itos = {idx: tok for tok, idx in list(zip(tokens, range(len(tokens))))}
