@@ -4,8 +4,9 @@ import chess
 import regex as re
 import tokenizers
 import torch
-from tokenizers import models, pre_tokenizers, processors
+from tokenizers import models, normalizers, pre_tokenizers, processors
 from torch import Tensor as TT
+from torch.nn.utils.rnn import pad_sequence
 from transformers import PreTrainedTokenizerFast
 from transformers.tokenization_utils_fast import BatchEncoding
 
@@ -25,6 +26,16 @@ class ChessTokenizer(PreTrainedTokenizerFast):
     itos: dict[int, str]
     """String to Integer Mapping. This is the vocab"""
 
+    @staticmethod
+    def _init_post_processor(bos_token, bos_token_id) -> processors.TemplateProcessing:
+        """Exposed to allow over-riding in subclass"""
+        post_proc = processors.TemplateProcessing(
+            single=f"{bos_token} $0",
+            pair=None,
+            special_tokens=[(bos_token, bos_token_id)],
+        )
+        return post_proc
+
     def __init__(
         self,
         stoi,
@@ -35,6 +46,7 @@ class ChessTokenizer(PreTrainedTokenizerFast):
         eos_token,
         bos_token_id,
         name_or_path,
+        post_process_fn=_init_post_processor,
         **kwargs,
     ):
         self.stoi = stoi
@@ -50,14 +62,10 @@ class ChessTokenizer(PreTrainedTokenizerFast):
 
         slow_tokenizer = tokenizers.Tokenizer(tok_model)
         slow_tokenizer.pre_tokenizer = self._init_pretokenizer()
+        slow_tokenizer.normalizer = self._init_normalizer()
 
         # post processing adds special tokens unless explicitly ignored
-        post_proc = processors.TemplateProcessing(
-            single=f"{bos_token} $0",
-            pair=None,
-            special_tokens=[(bos_token, bos_token_id)],
-        )
-        slow_tokenizer.post_processor = post_proc
+        slow_tokenizer.post_processor = post_process_fn(bos_token, bos_token_id)
 
         super().__init__(
             tokenizer_object=slow_tokenizer,
@@ -97,6 +105,9 @@ class ChessTokenizer(PreTrainedTokenizerFast):
 
         self._decode = _decode
 
+    def _init_normalizer(self):
+        return None
+
     def _init_pretokenizer(self) -> pre_tokenizers.PreTokenizer:
         raise NotImplementedError
 
@@ -105,6 +116,81 @@ class ChessTokenizer(PreTrainedTokenizerFast):
 
     def get_id2square_list() -> list[int]:
         raise NotImplementedError
+
+
+class PromotionTokenizer(ChessTokenizer):
+    """Uci tokenizer converting start/end tiles and promotion types each into individual tokens."""
+
+    SPECIAL_TOKENS = (_PAD_TOKEN, _BOS_TOKEN, _EOS_TOKEN, _UNK_TOKEN) = [
+        "<|pad|>",
+        "<|startoftext|>",
+        "<|endoftext|>",
+        "<|unknown|>",
+    ]
+
+    stoi: dict[str, int]
+    itos: dict[int, str]
+
+    _split_regex: str
+    _promotion_symbols: str
+
+    id2square: List[int] = list(range(4, 68))
+    """
+    List mapping token IDs to squares on the chess board. Order is file then rank, i.e.:
+    `A1, B1, C1, ..., F8, G8, H8`
+    """
+
+    def get_id2square_list(self) -> List[int]:
+        return self.id2square
+
+    def __init__(self, *, upper_promotions: bool, **kwargs):
+        # Remove conflicting arguments from kwargs if they exist
+        kwargs.pop("pad_token", None)
+        kwargs.pop("unk_token", None)
+        kwargs.pop("bos_token", None)
+        kwargs.pop("eos_token", None)
+        kwargs.pop("clean_up_tokenization_spaces", None)
+        kwargs.pop("name_or_path", None)
+
+        self.upper_promotions = upper_promotions
+
+        if self.upper_promotions:
+            self._promotion_symbols = ["Q ", "R ", "B ", "N ", " "]
+            self._split_regex = r"[a-h][1-8]|[QRBN]* "
+        else:
+            self._promotion_symbols = ["Q ", "R ", "B ", "N ", " "]
+            self._split_regex = r"[a-h][1-8]|[qrbn]* "
+
+        self.all_tokens = self.SPECIAL_TOKENS + chess.SQUARE_NAMES + self._promotion_symbols
+
+        self.stoi = {tok: idx for idx, tok in enumerate(self.all_tokens)}
+        self.itos = {idx: tok for idx, tok in enumerate(self.all_tokens)}
+
+        super().__init__(
+            self.stoi,
+            self.itos,
+            pad_token=self._PAD_TOKEN,
+            unk_token=self._UNK_TOKEN,
+            bos_token=self._BOS_TOKEN,
+            eos_token=self._EOS_TOKEN,
+            bos_token_id=self.stoi[self._BOS_TOKEN],
+            name_or_path="austindavis/promotion_tokenizer",
+            clean_up_tokenization_spaces=False,
+            **kwargs,
+        )
+
+    def _init_normalizer(self):
+        add_trailing_space = normalizers.Append(" ")
+        return add_trailing_space
+
+    def _init_pretokenizer(self):
+        # Pre-tokenizer to split input into UCI moves
+        pattern = tokenizers.Regex(self._split_regex)
+        pre_tokenizer = pre_tokenizers.Split(pattern=pattern, behavior="merged_with_previous")
+        return pre_tokenizer
+
+    def _process_str_tokens(self, token_str: list[str]):
+        return "".join(token_str)
 
 
 class StructuredUciTileTokenizer:
@@ -139,12 +225,13 @@ class StructuredUciTileTokenizer:
             + ["~"]  # the no promote token
             + list("-+#")  # the no_check, check, and checkmate tokens
         )
-        self.stoi = {tok: idx for tok, idx in list(zip(tokens, range(len(tokens))))}
-        self.itos = {idx: tok for tok, idx in list(zip(tokens, range(len(tokens))))}
+        self.vocab_size = len(tokens)
+        self.stoi = {tok: idx for tok, idx in list(zip(tokens, range(self.vocab_size)))}
+        self.itos = {idx: tok for tok, idx in list(zip(tokens, range(self.vocab_size)))}
 
-    def pre_tokenize_str(self, sequence: str) -> list[list[tuple[str, tuple[int, int]]]]:
+    def tokenize(self, sequence: str, add_special_tokens=True) -> list[tuple[str, tuple[int, int]]]:
         moves = sequence.split()  # Split moves on whitespace
-        parsed_moves = []
+        parsed_moves = [(self._BOS_TOKEN, (0, 0))] if add_special_tokens else []
 
         start_idx = 0  # Track character index in the original sequence
         for move in moves:
@@ -184,19 +271,78 @@ class StructuredUciTileTokenizer:
 
         return parsed_moves
 
-    def encode(self, batch_or_sequence: Union[str, Iterable[str]], return_tensors: bool = True):
-        wrap = torch.tensor if return_tensors else lambda x, _: x
-        if not isinstance(batch_or_sequence, str):
-            return [
-                wrap(
-                    [self.stoi.get(t[0], self._UNK_TOKEN) for t in self.pre_tokenize_str(s)],
-                    dtype=torch.long,
-                )
-                for s in batch_or_sequence
-            ]
+    def __call__(self, text, **kwargs):
+        return self.encode_plus(text, **kwargs)
 
-        parsed_tokens = self.pre_tokenize_str(batch_or_sequence)
-        return wrap([self.stoi[t[0]] for t in parsed_tokens], dtype=torch.long)
+    def encode_plus(
+        self,
+        text: str,
+        add_special_tokens: bool = True,
+        max_length: int = 1024,
+        return_tensors: str = "pt",
+        truncation: bool = True,
+    ):
+        assert isinstance(text, str)
+        encoding = self.batch_encode_plus(
+            [text],
+            add_special_tokens=add_special_tokens,
+            max_length=max_length,
+            padding=True,  # required to force tensor
+            return_tensors=return_tensors,
+            truncation=truncation,
+        )
+        return {k: v[0] for (k, v) in encoding.items()}
+
+    def batch_encode_plus(
+        self,
+        batch_text_or_text_pairs: Iterable[str],
+        add_special_tokens: bool = True,
+        max_length: int = 1024,
+        padding: bool = True,
+        return_tensors: str = "pt",
+        truncation: bool = True,
+    ):
+        assert not isinstance(
+            batch_text_or_text_pairs, str
+        ), "Used batch_encode_plus on a string input."
+
+        assert isinstance(
+            batch_text_or_text_pairs, Iterable
+        ), f"Expects `batch_text_or_text_pairs` to be Iterable[str], but received {type(batch_text_or_text_pairs)=}"
+
+        input_ids = [
+            torch.tensor(
+                [
+                    self.stoi.get(t[0], self._UNK_TOKEN)
+                    for t in self.tokenize(s, add_special_tokens)
+                ],
+                dtype=torch.long,
+            )
+            for s in batch_text_or_text_pairs
+        ]
+
+        if truncation:
+            input_ids = [v[:max_length] for v in input_ids]
+
+        attention_masks = [torch.ones_like(ids) for ids in input_ids]
+
+        if padding:
+            input_ids = pad_sequence(
+                input_ids,
+                batch_first=True,
+            )
+            attention_masks = pad_sequence(
+                attention_masks,
+                batch_first=True,
+            )
+
+        if return_tensors:
+            return {"input_ids": input_ids, "attention_mask": attention_masks}
+        else:
+            return {
+                "input_ids": [L.tolist() for L in input_ids],
+                "attention_mask": [L.tolist() for L in attention_masks],
+            }
 
     def _join_in_groups(self, L):
         grouped = ["".join(L[i : i + 4]) for i in range(0, len(L), 4)]
