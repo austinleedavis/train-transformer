@@ -21,7 +21,7 @@ class GPT2Lightning(L.LightningModule):
         self.lr = self.config.run.lr
 
         self.tokenizer = hydra.utils.instantiate(self.config.llm.tokenizer.instance)
-        self.vocab_size = self.tokenizer.vocab_size
+        self.vocab_size = self.model.config.vocab_size
         self.save_hyperparameters(logger=False)
 
     def setup(self, stage):
