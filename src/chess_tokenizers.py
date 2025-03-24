@@ -185,9 +185,10 @@ class StructuredUciTileTokenizer:
         return parsed_moves
 
     def encode(self, batch_or_sequence: Union[str, Iterable[str]], return_tensors: bool = True):
+        wrap = torch.tensor if return_tensors else lambda x, _: x
         if not isinstance(batch_or_sequence, str):
             return [
-                torch.tensor(
+                wrap(
                     [self.stoi.get(t[0], self._UNK_TOKEN) for t in self.pre_tokenize_str(s)],
                     dtype=torch.long,
                 )
@@ -195,7 +196,7 @@ class StructuredUciTileTokenizer:
             ]
 
         parsed_tokens = self.pre_tokenize_str(batch_or_sequence)
-        return [self.stoi[t[0]] for t in parsed_tokens]
+        return wrap([self.stoi[t[0]] for t in parsed_tokens], dtype=torch.long)
 
     def _join_in_groups(self, L):
         grouped = ["".join(L[i : i + 4]) for i in range(0, len(L), 4)]
