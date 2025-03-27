@@ -86,6 +86,13 @@ RUN mkdir -p ${WORKDIR_PATH} && \
     chown -R ${USER_ID}:${GROUP_ID} /package
 
 
+# ------------------------------ rust and cargo ------------------------------ #
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+SHELL ["/bin/bash", "-c"]
+RUN source $HOME/.cargo/env && rustc --version && cargo --version
+
+USER root
 
 # ------------------------------- requirements ------------------------------ #
 
