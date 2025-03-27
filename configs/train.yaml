@@ -1,6 +1,6 @@
 defaults:
   - dataset: lichess-uci-202302
-  - llm: chessGPT_d12_structured
+  - llm: chessGPT2
   # - compile: no_options
 
 run:
