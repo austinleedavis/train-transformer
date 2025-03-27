@@ -11,6 +11,41 @@ import regex as re
 UCI_TOKEN_PATTERN = re.compile(r"[a-h]\d|[QBRN]")
 
 
+def check_token_validity(predicted_uci: str, valid_uci: str):
+    """This function checks whether the output of an LLM is semantically valid.
+    This is a bit more technical than simply checking if the moves are valid, because
+    tokenization typically splits the moves into sub-plies, and we need to check each
+    independent of if the other parts are invalid."""
+
+    # TODO validate UCI without a valid_uci
+
+    board = chess.Board()
+    valid_uci = valid_uci.lower()
+    predicted_uci = predicted_uci.lower()
+
+    grades = ""
+    for plin, plout in zip(valid_uci.split(), predicted_uci.split()):
+        from_sq, to_sq = plout[:2], plout[2:]
+        start_found = False
+        end_found = False
+        for legal_move in board.generate_legal_moves():
+            legal_from = legal_move.uci()[:2]
+
+            if legal_from == from_sq:
+                start_found = True
+            if legal_from == plin[:2]:
+                legal_to = legal_move.uci()[2:]
+                if legal_to == to_sq:
+                    end_found = True
+
+        grades += ".." if start_found else "XX"
+        grades += ".." if end_found else "X" * len(to_sq)
+        grades += " "
+        board.push_uci(plin)
+
+    print(valid_uci, predicted_uci, grades, sep="\n")
+
+
 def get_board_position_change_indices(
     token_offsets: list[tuple[int, int]], n_pos: int
 ) -> list[int]:
