@@ -6,7 +6,7 @@ import torch
 from lightning.pytorch.loggers.wandb import WandbLogger
 from omegaconf import DictConfig, OmegaConf
 from torch.optim import AdamW
-from transformers import PreTrainedTokenizerFast
+from transformers import GPT2LMHeadModel, PreTrainedTokenizerFast
 from transformers.loss.loss_utils import ForCausalLMLoss
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ class GPT2Lightning(L.LightningModule):
 
     config: DictConfig
     tokenizer: PreTrainedTokenizerFast
+    model: GPT2LMHeadModel
 
     def __init__(self, config: DictConfig):
         super().__init__()
@@ -73,8 +74,8 @@ class GPT2Lightning(L.LightningModule):
         )
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
-    def forward(self, inputs: torch.LongTensor, attention_mask: torch.LongTensor = None):
-        return self.model.forward(**inputs)
+    def forward(self, *args, **kwargs):
+        return self.model.forward(*args, **kwargs)
 
     def training_step(self, batch, batch_idx):
         logits = self.model.forward(**batch).logits
@@ -86,11 +87,12 @@ class GPT2Lightning(L.LightningModule):
         )
         self.log("train/loss", loss)
 
-        if batch_idx % 500:
-            input = self.tokenizer.decode(batch["input_ids"][0])
-            logger.log(19, f"{input=}")
-            output = self.tokenizer.decode(logits.argmax(-1)[0])
-            logger.log(19, f"{output=}")
+        if batch_idx % 500 == 0:
+            if self.local_rank == 0:
+                with torch.no_grad():
+                    logger.log(
+                        19, self.tokenizer.decode(self.model.generate(max_new_tokens=600)[0])
+                    )
 
         return {"loss": loss}
 
